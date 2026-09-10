@@ -70,10 +70,10 @@ export const WhatsAppPreviewModal: React.FC<WhatsAppPreviewModalProps> = ({
         <div className="px-5 sm:px-6 py-4 border-b border-slate-200/80 dark:border-[#222F46] flex items-center justify-between shrink-0">
           <div>
             <h3 className="font-bold text-base text-[#0F172A] dark:text-[#F8FAFC]">
-              Communication WhatsApp Directe
+              CRM WhatsApp
             </h3>
             <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-              Destinataire : <strong className="text-[#0F172A] dark:text-[#F8FAFC]">{student.parentName}</strong> (+{fullNormalizedNumber})
+              Destinataire : <strong className="text-[#0F172A] dark:text-[#F8FAFC]">{student.parentName}</strong> ({student.parentPhone})
             </p>
           </div>
           <button 

@@ -54,17 +54,17 @@ export const CrmWhatsAppView: React.FC<CrmWhatsAppViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Apple Info Card */}
+      {/* CRM WhatsApp Info Card */}
       <div className="bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1.5">
           <span className="text-xs font-semibold text-[#0071E3] dark:text-[#38BDF8] uppercase tracking-wider">
-            Standard International E.164 (+242)
+            CRM WhatsApp
           </span>
           <h3 className="text-base sm:text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-            Liaison Directe WhatsApp sans Enregistrement Préalable
+            Relances, Convocations et Félicitations Directes
           </h3>
           <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-            Le système formate chaque numéro congolais (ex: 06 654 32 10) en lien universel <code className="text-[#0F172A] dark:text-[#F8FAFC] font-semibold">wa.me/242...</code> avec message personnalisé pré-rédigé.
+            Envoi instantané de messages personnalisés aux parents d'élèves via WhatsApp.
           </p>
         </div>
 

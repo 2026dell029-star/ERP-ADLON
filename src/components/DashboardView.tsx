@@ -255,7 +255,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0071E3] hover:bg-[#005bb5] text-white text-xs font-semibold transition-all shadow-2xs"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
-                      <span>Relancer (+242)</span>
+                      <span>CRM WhatsApp</span>
                     </button>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationTab, SchoolConfig } from '../types';
+import { NavigationTab, SchoolConfig, UserRole, School as SchoolType, ROLE_PERMISSIONS } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
@@ -17,7 +17,10 @@ import {
   Flame,
   LogIn,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  Building2,
+  Repeat,
+  Wallet
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,7 +32,9 @@ interface SidebarProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   config?: SchoolConfig;
-  onOpenAuthModal?: () => void;
+  currentSchool?: SchoolType;
+  activeRole?: UserRole;
+  onChangeRole?: () => void;
 }
 
 interface NavItem {
@@ -44,14 +49,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab,
   isOpen,
   onClose,
-  activeUsersCount,
   theme,
   onToggleTheme,
   config,
-  onOpenAuthModal,
+  currentSchool,
+  activeRole = 'dirigeant',
+  onChangeRole,
 }) => {
-  const { user } = useAuth();
-  const navItems: NavItem[] = [
+  const { user, logOut } = useAuth();
+  const roleConfig = ROLE_PERMISSIONS[activeRole] || ROLE_PERMISSIONS.dirigeant;
+
+  const allNavItems: NavItem[] = [
     {
       id: 'dashboard',
       label: 'Tableau de bord',
@@ -70,9 +78,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'crm',
-      label: 'CRM & WhatsApp (+242)',
+      label: 'CRM WhatsApp',
       icon: MessageCircle,
-      badge: 'Direct',
     },
     {
       id: 'pedagogy',
@@ -97,6 +104,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
+  // Filter allowed navigation items according to current role
+  const visibleNavItems = allNavItems.filter((item) =>
+    roleConfig.allowedTabs.includes(item.id)
+  );
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -115,43 +127,85 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         {/* Top Header + Scrollable Navigation Area */}
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          {/* Top Header */}
-          <div className="shrink-0 h-16 px-5 flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#1E293B]">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-xl bg-[#0071E3] dark:bg-[#2563EB] shrink-0 flex items-center justify-center text-white shadow-xs">
-                <School className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-[14px] tracking-tight text-[#1D1D1F] dark:text-[#F8FAFC] truncate max-w-[125px]" title={config?.schoolName || 'ERP ADLON'}>
-                    {config?.schoolName ? (config.schoolName.replace(/^Complexe\s+Scolaire\s+(Privé\s+)?/i, '') || config.schoolName) : 'ADLON'}
+          {/* Top School Header */}
+          <div className="shrink-0 p-4 border-b border-[#E2E8F0] dark:border-[#1E293B] bg-slate-50/70 dark:bg-[#0B0F19]/60">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                {currentSchool?.logo || config?.schoolLogo ? (
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-center p-0.5 shadow-xs overflow-hidden">
+                    <img
+                      src={currentSchool?.logo || config?.schoolLogo}
+                      alt={currentSchool?.name || config?.schoolName || 'Logo'}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-xl bg-blue-600 dark:bg-blue-600 shrink-0 flex items-center justify-center text-white shadow-xs">
+                    <School className="w-4 h-4" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <span className="font-bold text-[13px] tracking-tight text-[#1D1D1F] dark:text-[#F8FAFC] truncate block" title={currentSchool?.name || config?.schoolName || 'ERP ADLON'}>
+                    {currentSchool?.name || config?.schoolName || 'ERP ADLON'}
                   </span>
-                  <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[#F4F5F7] dark:bg-[#1E293B] text-[#64748B] dark:text-[#94A3B8] shrink-0">
-                    ERP
-                  </span>
+                  <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] leading-none truncate mt-0.5">
+                    {currentSchool?.city || config?.schoolCity || 'Brazzaville'} • {currentSchool?.academicYear || config?.academicYear || '2026-2027'}
+                  </p>
                 </div>
-                <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] leading-none truncate mt-0.5">
-                  {config?.academicYear || '2026-2027'} • {config?.schoolCity || 'Congo'}
-                </p>
               </div>
-            </div>
 
-            {/* Mobile close button */}
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-[#64748B] hover:text-[#1D1D1F] dark:hover:text-[#F8FAFC] lg:hidden"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              {/* Mobile close button */}
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#1D1D1F] dark:hover:text-[#F8FAFC] lg:hidden"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          {/* Navigation Section with Smooth Scrolling */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1.5 scrollbar-thin">
+          {/* Role Status Card */}
+          <div className="p-3 border-b border-slate-100 dark:border-[#1E293B]">
+            <div className="p-2.5 rounded-xl bg-slate-100/90 dark:bg-[#1E293B]/80 border border-slate-200/80 dark:border-slate-700/60">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+                  Rôle Actif
+                </span>
+                {onChangeRole && (
+                  <button
+                    onClick={onChangeRole}
+                    className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    Changer
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
+                  {activeRole === 'dirigeant' && <ShieldCheck className="w-3.5 h-3.5" />}
+                  {activeRole === 'gestionnaire' && <Wallet className="w-3.5 h-3.5" />}
+                  {activeRole === 'directeur' && <GraduationCap className="w-3.5 h-3.5" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+                    {roleConfig.title}
+                  </div>
+                  <div className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">
+                    {roleConfig.allowedTabs.length} modules autorisés
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Section */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-1 scrollbar-thin">
             <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              Modules de Gestion
+              Modules Autorisés
             </div>
 
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
 
@@ -162,14 +216,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     setActiveTab(item.id);
                     onClose();
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-[13px] font-semibold transition-all ${
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#0071E3] dark:bg-[#2563EB] text-white shadow-sm'
-                      : 'text-[#0F172A] dark:text-[#E2E8F0] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B]'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-[#0F172A] dark:text-[#E2E8F0] hover:bg-slate-100 dark:hover:bg-[#1E293B]'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
                       isActive ? 'bg-white/20 text-white' : 'text-[#64748B] dark:text-[#94A3B8]'
                     }`}>
                       <Icon className="w-4 h-4" />
@@ -179,10 +233,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                   {item.badge && (
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                      className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
                         isActive
                           ? 'bg-white/20 text-white'
-                          : 'bg-blue-50 text-[#0071E3] dark:bg-[#1E293B] dark:text-[#38BDF8]'
+                          : 'bg-blue-50 text-blue-600 dark:bg-[#1E293B] dark:text-blue-300'
                       }`}
                     >
                       {item.badge}
@@ -194,73 +248,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Bottom Section: Theme Switcher & User Account */}
+        {/* Bottom Section: Theme & Account */}
         <div className="shrink-0 p-3 border-t border-slate-200/80 dark:border-[#1E293B] space-y-2 bg-[#F8FAFC] dark:bg-[#0B0F19]">
           {/* Theme Switcher Button */}
           <button
             onClick={onToggleTheme}
-            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200/80 dark:border-[#222F46] bg-white dark:bg-[#151D2E] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-[#0F172A] dark:text-[#F8FAFC] flex items-center justify-between text-xs font-semibold transition-all shadow-2xs"
+            className="w-full px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-[#222F46] bg-white dark:bg-[#151D2E] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-[#0F172A] dark:text-[#F8FAFC] flex items-center justify-between text-xs font-semibold transition-all cursor-pointer"
           >
             <div className="flex items-center gap-2">
               {theme === 'dark' ? (
-                <Moon className="w-4 h-4 text-[#38BDF8]" />
+                <Moon className="w-3.5 h-3.5 text-blue-400" />
               ) : (
-                <Sun className="w-4 h-4 text-[#F59E0B]" />
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
               )}
-              <span>{theme === 'dark' ? 'Mode Sombre Actif' : 'Mode Clair Actif'}</span>
+              <span>{theme === 'dark' ? 'Mode Sombre' : 'Mode Clair'}</span>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-[#1E293B] text-[#0071E3] dark:text-[#38BDF8] font-semibold">
-              Basculer
-            </span>
+            <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">Basculer</span>
           </button>
 
-          {/* Active telemetry signal & Firebase Status */}
-          <div className="px-3 py-1.5 rounded-2xl bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] flex items-center justify-between text-xs shadow-2xs">
-            <div className="flex items-center gap-2">
-              <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <div className="flex flex-col">
-                <span className="text-[11px] font-bold text-[#0F172A] dark:text-[#F8FAFC]">Firestore</span>
-                <span className="text-[9px] text-[#64748B] dark:text-[#94A3B8] font-mono">erp-adlon</span>
+          {/* User Account with logout */}
+          {user && (
+            <div className="p-2 rounded-xl border border-slate-200/80 dark:border-[#222F46] bg-white dark:bg-[#151D2E] flex items-center justify-between">
+              <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+                <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div className="overflow-hidden min-w-0">
+                  <div className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+                    {user.displayName || 'Utilisateur'}
+                  </div>
+                  <div className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate font-mono">
+                    {user.email}
+                  </div>
+                </div>
               </div>
+              <button
+                onClick={() => logOut()}
+                title="Déconnexion"
+                className="p-1.5 rounded-lg text-[#64748B] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              En direct
-            </span>
-          </div>
-
-          {/* User Account / Auth trigger */}
-          {user ? (
-            <button
-              onClick={onOpenAuthModal}
-              className="w-full text-left px-3 py-2 rounded-2xl border border-slate-200/80 dark:border-[#222F46] bg-white dark:bg-[#151D2E] hover:bg-slate-50 dark:hover:bg-[#1E293B] flex items-center gap-3 transition-colors cursor-pointer group"
-              title="Gérer le compte Firebase"
-            >
-              <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden shadow-2xs">
-                {user.photoURL ? (
-                  <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  (user.displayName || user.email || 'A').charAt(0).toUpperCase()
-                )}
-              </div>
-              <div className="overflow-hidden flex-1 min-w-0">
-                <div className="text-[13px] font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate group-hover:text-blue-500 transition-colors">
-                  {user.displayName || 'Administrateur'}
-                </div>
-                <div className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate font-mono">
-                  {user.email}
-                </div>
-              </div>
-              <LogOut className="w-4 h-4 text-slate-400 group-hover:text-rose-500 shrink-0" />
-            </button>
-          ) : (
-            <button
-              onClick={onOpenAuthModal}
-              className="w-full px-3 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white flex items-center justify-center gap-2 text-xs font-semibold transition-all shadow-sm cursor-pointer"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>Connexion (Email / Google)</span>
-            </button>
           )}
         </div>
       </aside>

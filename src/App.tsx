@@ -7,11 +7,17 @@ import {
   PaymentRecord, 
   StudentStatus, 
   NavigationTab,
-  PenaltyRecord
+  PenaltyRecord,
+  School,
+  UserRole,
+  ROLE_PERMISSIONS
 } from './types';
 import { initialConfig, initialStudents, initialStaff, initialUserStats } from './data/mockData';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
+import { AuthView } from './components/AuthView';
+import { SchoolSelectionView } from './components/SchoolSelectionView';
+import { RoleSelectionView } from './components/RoleSelectionView';
 import { DashboardView } from './components/DashboardView';
 import { FinanceView } from './components/FinanceView';
 import { CrmWhatsAppView } from './components/CrmWhatsAppView';
@@ -25,9 +31,10 @@ import { PaymentModal } from './components/PaymentModal';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { ReportCardModal } from './components/ReportCardModal';
 import { PenaltyModal } from './components/PenaltyModal';
-import { AuthModal } from './components/AuthModal';
 import { useAuth } from './context/AuthContext';
 import {
+  subscribeToSchools,
+  saveSchoolToFirestore,
   subscribeToSchoolConfig,
   subscribeToStudents,
   subscribeToStaff,
@@ -38,19 +45,83 @@ import {
   addAuditLogToFirestore,
   seedInitialFirestoreData,
 } from './services/firestoreService';
-import { Flame, LogIn } from 'lucide-react';
+import { Flame, Building2, ShieldCheck, GraduationCap, Wallet } from 'lucide-react';
+
+const DEFAULT_INITIAL_SCHOOLS: School[] = [
+  {
+    id: 'school_adlon_brazza',
+    name: 'Complexe Scolaire ADLON',
+    code: 'ADLON-242',
+    city: 'Brazzaville',
+    country: 'Congo',
+    currency: 'FCFA',
+    academicYear: '2026-2027',
+    directorName: 'M. Gaston Bantsimba',
+    motto: 'Discipline - Travail - Succès',
+    createdAt: new Date().toISOString(),
+    studentCount: 5,
+  },
+  {
+    id: 'school_saint_exupery',
+    name: 'Institut Bilingue Saint-Exupéry',
+    code: 'IBSE-01',
+    city: 'Pointe-Noire',
+    country: 'Congo',
+    currency: 'FCFA',
+    academicYear: '2026-2027',
+    directorName: 'Mme. Claire Mbemba',
+    motto: 'Excellence et Rigueur Académique',
+    createdAt: new Date().toISOString(),
+    studentCount: 0,
+  }
+];
 
 export default function App() {
   const { user, loading } = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Theme state: default to 'dark' for instant eye relief ("l'application est trop blanche ça fait mal aux yeux")
+  // Theme state: default to 'dark' for instant eye relief
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('adlon_theme');
     return (saved === 'dark' || saved === 'light') ? saved : 'dark';
   });
 
-  // State management with safe localStorage fallback
+  // Schools list state
+  const [schools, setSchools] = useState<School[]>(() => {
+    try {
+      const saved = localStorage.getItem('adlon_schools');
+      return saved ? JSON.parse(saved) : DEFAULT_INITIAL_SCHOOLS;
+    } catch {
+      return DEFAULT_INITIAL_SCHOOLS;
+    }
+  });
+
+  // Currently selected School (An account is linked to only 1 single school)
+  const [currentSchool, setCurrentSchool] = useState<School | null>(() => {
+    try {
+      const saved = localStorage.getItem('adlon_current_school');
+      if (saved) return JSON.parse(saved);
+      const savedSchools = localStorage.getItem('adlon_schools');
+      if (savedSchools) {
+        const parsed = JSON.parse(savedSchools);
+        if (parsed && parsed.length > 0) return parsed[0];
+      }
+      return DEFAULT_INITIAL_SCHOOLS[0];
+    } catch {
+      return DEFAULT_INITIAL_SCHOOLS[0];
+    }
+  });
+
+  // Currently selected User Role: 'dirigeant' | 'gestionnaire' | 'directeur' | null
+  const [currentRole, setCurrentRole] = useState<UserRole | null>(() => {
+    try {
+      const saved = localStorage.getItem('adlon_current_role');
+      return (saved === 'dirigeant' || saved === 'gestionnaire' || saved === 'directeur') ? saved : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // State management for active school data
   const [config, setConfig] = useState<SchoolConfig>(() => {
     try {
       const saved = localStorage.getItem('adlon_config');
@@ -82,6 +153,17 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<NavigationTab>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Active Modals
+  const [whatsAppModalData, setWhatsAppModalData] = useState<{
+    student: Student;
+    defaultType?: 'relance' | 'convocation' | 'felicitations';
+  } | null>(null);
+
+  const [detailModalStudent, setDetailModalStudent] = useState<Student | null>(null);
+  const [paymentModalStudent, setPaymentModalStudent] = useState<Student | null>(null);
+  const [reportCardStudent, setReportCardStudent] = useState<Student | null>(null);
+  const [penaltyModalStudent, setPenaltyModalStudent] = useState<Student | null>(null);
+
   // Sync theme to document element and localStorage
   useEffect(() => {
     localStorage.setItem('adlon_theme', theme);
@@ -96,18 +178,27 @@ export default function App() {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Active Modals
-  const [whatsAppModalData, setWhatsAppModalData] = useState<{
-    student: Student;
-    defaultType?: 'relance' | 'convocation' | 'felicitations';
-  } | null>(null);
+  // Sync persistence
+  useEffect(() => {
+    localStorage.setItem('adlon_schools', JSON.stringify(schools));
+  }, [schools]);
 
-  const [detailModalStudent, setDetailModalStudent] = useState<Student | null>(null);
-  const [paymentModalStudent, setPaymentModalStudent] = useState<Student | null>(null);
-  const [reportCardStudent, setReportCardStudent] = useState<Student | null>(null);
-  const [penaltyModalStudent, setPenaltyModalStudent] = useState<Student | null>(null);
+  useEffect(() => {
+    if (currentSchool) {
+      localStorage.setItem('adlon_current_school', JSON.stringify(currentSchool));
+    } else {
+      localStorage.removeItem('adlon_current_school');
+    }
+  }, [currentSchool]);
 
-  // Synchronize to localStorage
+  useEffect(() => {
+    if (currentRole) {
+      localStorage.setItem('adlon_current_role', currentRole);
+    } else {
+      localStorage.removeItem('adlon_current_role');
+    }
+  }, [currentRole]);
+
   useEffect(() => {
     localStorage.setItem('adlon_config', JSON.stringify(config));
   }, [config]);
@@ -120,40 +211,92 @@ export default function App() {
     localStorage.setItem('adlon_staff', JSON.stringify(staff));
   }, [staff]);
 
-  // Real-time Firestore Subscriptions & Seeding (Only attach if auth is ready and user is authenticated)
+  // Sync active school data changes to config
   useEffect(() => {
-    if (loading || !user) {
-      return;
+    if (currentSchool) {
+      setConfig((prev) => ({
+        ...prev,
+        schoolName: currentSchool.name,
+        schoolCity: currentSchool.city,
+        currency: currentSchool.currency,
+        academicYear: currentSchool.academicYear,
+      }));
     }
+  }, [currentSchool]);
 
-    // Attempt initial baseline seed if Firestore collections are empty
-    seedInitialFirestoreData(config, students, staff).catch((err) => {
-      console.warn('Initial seeding deferred:', err);
-    });
+  // Ensure active tab is allowed for current role
+  useEffect(() => {
+    if (currentRole) {
+      const allowed = ROLE_PERMISSIONS[currentRole]?.allowedTabs || ['dashboard'];
+      if (!allowed.includes(activeTab)) {
+        setActiveTab(allowed[0] || 'dashboard');
+      }
+    }
+  }, [currentRole, activeTab]);
 
-    const unsubConfig = subscribeToSchoolConfig((remoteConfig) => {
-      if (remoteConfig && remoteConfig.schoolName) {
-        setConfig((prev) => ({ ...prev, ...remoteConfig }));
+  // Subscribe to schools list from Firestore if authenticated
+  useEffect(() => {
+    if (loading || !user) return;
+
+    const unsubSchools = subscribeToSchools((remoteSchools) => {
+      if (remoteSchools && remoteSchools.length > 0) {
+        setSchools(remoteSchools);
       }
     });
 
-    const unsubStudents = subscribeToStudents((remoteStudents) => {
-      if (remoteStudents && remoteStudents.length > 0) {
-        setStudents(remoteStudents);
-      }
-    });
+    return () => {
+      unsubSchools();
+    };
+  }, [user, loading]);
 
-    const unsubStaff = subscribeToStaff((remoteStaff) => {
-      if (remoteStaff && remoteStaff.length > 0) {
-        setStaff(remoteStaff);
-      }
-    });
+  // Subscribe to active school's Firestore collections
+  useEffect(() => {
+    if (loading || !user || !currentSchool) return;
 
-    const unsubLogs = subscribeToAuditLogs((remoteLogs) => {
-      if (remoteLogs && remoteLogs.length > 0) {
-        setUserStats((prev) => ({ ...prev, recentAuditLogs: remoteLogs }));
-      }
-    });
+    const schoolId = currentSchool.id;
+
+    // Baseline initial seed for this school if needed
+    seedInitialFirestoreData(config, students, staff, schoolId).catch(console.warn);
+
+    const unsubConfig = subscribeToSchoolConfig(
+      (remoteConfig) => {
+        if (remoteConfig && remoteConfig.schoolName) {
+          setConfig((prev) => ({ ...prev, ...remoteConfig }));
+        }
+      },
+      undefined,
+      schoolId
+    );
+
+    const unsubStudents = subscribeToStudents(
+      (remoteStudents) => {
+        if (remoteStudents && remoteStudents.length > 0) {
+          setStudents(remoteStudents);
+        }
+      },
+      undefined,
+      schoolId
+    );
+
+    const unsubStaff = subscribeToStaff(
+      (remoteStaff) => {
+        if (remoteStaff && remoteStaff.length > 0) {
+          setStaff(remoteStaff);
+        }
+      },
+      undefined,
+      schoolId
+    );
+
+    const unsubLogs = subscribeToAuditLogs(
+      (remoteLogs) => {
+        if (remoteLogs && remoteLogs.length > 0) {
+          setUserStats((prev) => ({ ...prev, recentAuditLogs: remoteLogs }));
+        }
+      },
+      undefined,
+      schoolId
+    );
 
     return () => {
       unsubConfig();
@@ -161,7 +304,31 @@ export default function App() {
       unsubStaff();
       unsubLogs();
     };
-  }, [user, loading]);
+  }, [user, loading, currentSchool]);
+
+  // Handle School Selection
+  const handleSelectSchool = (school: School) => {
+    setCurrentSchool(school);
+    // Reset role to prompt role choice for the selected school
+    setCurrentRole(null);
+  };
+
+  // Handle School Creation
+  const handleCreateSchool = (newSchool: School) => {
+    setSchools((prev) => [newSchool, ...prev]);
+    if (user) {
+      saveSchoolToFirestore(newSchool).catch(console.warn);
+    }
+    setCurrentSchool(newSchool);
+    setCurrentRole(null);
+  };
+
+  // Handle Role Selection
+  const handleSelectRole = (role: UserRole) => {
+    setCurrentRole(role);
+    const allowed = ROLE_PERMISSIONS[role].allowedTabs;
+    setActiveTab(allowed[0] || 'dashboard');
+  };
 
   // Log action helper
   const addAuditLog = (author: string, role: string, action: string, category: any) => {
@@ -181,13 +348,12 @@ export default function App() {
       recentAuditLogs: [newLog, ...prev.recentAuditLogs],
     }));
 
-    // Send to Firestore only if authenticated
     if (user) {
-      addAuditLogToFirestore(newLog).catch((e) => console.warn('Audit log write error:', e));
+      addAuditLogToFirestore(newLog, currentSchool?.id).catch((e) => console.warn('Audit log write error:', e));
     }
   };
 
-  // Penalty Application handler (financial or disciplinary)
+  // Penalty Application handler
   const handleApplyPenalty = (studentId: string, penalty: PenaltyRecord) => {
     let updatedStudentObj: Student | null = null;
 
@@ -224,13 +390,13 @@ export default function App() {
     );
 
     if (updatedStudentObj && user) {
-      saveStudentToFirestore(updatedStudentObj).catch(console.warn);
+      saveStudentToFirestore(updatedStudentObj, currentSchool?.id).catch(console.warn);
     }
 
     const targetStudent = students.find((s) => s.id === studentId);
     const studentName = targetStudent ? `${targetStudent.firstName} ${targetStudent.lastName}` : 'Élève';
     addAuditLog(
-      penalty.recordedBy || 'Surveillant Général',
+      penalty.recordedBy || user?.displayName || 'Surveillant Général',
       'Vie Scolaire',
       `Attribution d'une pénalité (${penalty.type}) à ${studentName} : ${penalty.reason} ${penalty.amount ? `(+${penalty.amount.toLocaleString()} FCFA)` : ''}`,
       'Vie Scolaire'
@@ -254,7 +420,7 @@ export default function App() {
             status: 'annulee' as const,
             cancelledAt: new Date().toLocaleDateString('fr-FR'),
             cancelReason: cancelReason || 'Régularisation effectuée',
-            cancelledBy: 'Direction des Études',
+            cancelledBy: user?.displayName || 'Direction des Études',
           };
         });
 
@@ -285,13 +451,13 @@ export default function App() {
     );
 
     if (updatedStudentObj && user) {
-      saveStudentToFirestore(updatedStudentObj).catch(console.warn);
+      saveStudentToFirestore(updatedStudentObj, currentSchool?.id).catch(console.warn);
     }
 
     const targetStudent = students.find((s) => s.id === studentId);
     const studentName = targetStudent ? `${targetStudent.firstName} ${targetStudent.lastName}` : 'Élève';
     addAuditLog(
-      'Direction des Études',
+      user?.displayName || 'Direction des Études',
       'Direction',
       `Retrait de pénalité pour ${studentName} (Motif : ${cancelReason || 'Régularisation'})`,
       'Vie Scolaire'
@@ -323,7 +489,7 @@ export default function App() {
     );
 
     if (updatedStudentObj && user) {
-      saveStudentToFirestore(updatedStudentObj).catch(console.warn);
+      saveStudentToFirestore(updatedStudentObj, currentSchool?.id).catch(console.warn);
     }
 
     // Increase available bank cash
@@ -333,30 +499,29 @@ export default function App() {
     };
     setConfig(updatedConfig);
     if (user) {
-      saveSchoolConfigToFirestore(updatedConfig).catch(console.warn);
+      saveSchoolConfigToFirestore(updatedConfig, currentSchool?.id).catch(console.warn);
     }
 
-    // Add Audit Log
     const targetStudent = students.find((s) => s.id === studentId);
     const studentName = targetStudent ? `${targetStudent.firstName} ${targetStudent.lastName}` : 'Élève';
     addAuditLog(
-      payment.cashierName,
+      payment.cashierName || user?.displayName || 'Comptable',
       'Comptable',
       `Encaissement de ${payment.amount.toLocaleString()} FCFA (${payment.method}) pour ${studentName}`,
       'Finance'
     );
   };
 
-  // Add new student (e.g. from Prorata simulator)
+  // Add new student
   const handleAddNewStudent = (newStudent: Student) => {
     setStudents((prev) => [newStudent, ...prev]);
     if (user) {
-      saveStudentToFirestore(newStudent).catch(console.warn);
+      saveStudentToFirestore(newStudent, currentSchool?.id).catch(console.warn);
     }
 
     addAuditLog(
-      user?.displayName || 'M. Gaston Bantsimba',
-      'Directeur',
+      user?.displayName || 'Directeur des Admissions',
+      'Admissions',
       `Inscription Prorata Temporis de ${newStudent.firstName} ${newStudent.lastName} (${newStudent.classLevel}) - ${newStudent.monthsEnrolled} mois`,
       'Configuration'
     );
@@ -366,35 +531,35 @@ export default function App() {
   const handleAddNewStaff = (newStaff: StaffMember) => {
     setStaff((prev) => [...prev, newStaff]);
     if (user) {
-      saveStaffToFirestore(newStaff).catch(console.warn);
+      saveStaffToFirestore(newStaff, currentSchool?.id).catch(console.warn);
     }
 
     addAuditLog(
-      user?.displayName || 'M. Gaston Bantsimba',
-      'Directeur',
+      user?.displayName || 'Direction',
+      'Direction',
       `Création du contrat de ${newStaff.name} (${newStaff.role} - ${newStaff.contractType})`,
       'Sécurité'
     );
   };
 
-  // Update students (e.g. from GradesView)
+  // Update students
   const handleUpdateStudents = (updatedStudents: Student[]) => {
     setStudents(updatedStudents);
     if (user) {
       updatedStudents.forEach((st) => {
-        saveStudentToFirestore(st).catch(console.warn);
+        saveStudentToFirestore(st, currentSchool?.id).catch(console.warn);
       });
     }
 
     addAuditLog(
-      user?.displayName || 'M. Aimé Loubaki',
+      user?.displayName || 'Directeur des Études',
       'Corps Enseignant',
       'Mise à jour des notes trimestrielles et recalcul automatique des rangs',
       'Pédagogie'
     );
   };
 
-  // Quick WhatsApp trigger from TopBar or top unpaid list
+  // Quick WhatsApp trigger
   const handleQuickWhatsAppRelance = () => {
     const topUnpaid = [...students]
       .filter((s) => s.balanceRemaining > 0)
@@ -407,11 +572,56 @@ export default function App() {
     }
   };
 
-  const unpaidCount = students.filter(s => s.balanceRemaining > 0).length;
+  // ==================== SCREEN 0: LOADING SPINNER ====================
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#0B0F19] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8] tracking-wider uppercase">
+            Initialisation de l'environnement ERP ADLON...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==================== SCREEN 1: LOGIN GATE (MANDATORY BEFORE ANY CONTENT) ====================
+  if (!user) {
+    return <AuthView theme={theme} onToggleTheme={toggleTheme} />;
+  }
+
+  // ==================== SCREEN 2: SCHOOL SELECTION / CREATION ====================
+  if (!currentSchool) {
+    return (
+      <SchoolSelectionView
+        schools={schools}
+        onSelectSchool={handleSelectSchool}
+        onCreateSchool={handleCreateSchool}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    );
+  }
+
+  // ==================== SCREEN 3: ROLE SELECTION (DIRIGEANT / GESTIONNAIRE / DIRECTEUR) ====================
+  if (!currentRole) {
+    return (
+      <RoleSelectionView
+        currentSchool={currentSchool}
+        onSelectRole={handleSelectRole}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    );
+  }
+
+  // ==================== SCREEN 4: MAIN WORKSPACE DASHBOARD ====================
+  const roleConfig = ROLE_PERMISSIONS[currentRole];
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#0B0F19] text-[#1D1D1F] dark:text-[#F8FAFC] flex antialiased transition-colors duration-200">
-      {/* 1. LATERAL SIDEBAR NAVIGATION */}
+      {/* 1. LATERAL SIDEBAR NAVIGATION (Filtered by Role) */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={(tab) => {
@@ -424,12 +634,14 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         config={config}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        currentSchool={currentSchool}
+        activeRole={currentRole}
+        onChangeRole={() => setCurrentRole(null)}
       />
 
       {/* 2. MAIN APPLICATION CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
-        {/* Refined TopBar */}
+        {/* TopBar with Role and School controls */}
         <TopBar
           activeTab={activeTab}
           availableCash={config.availableBankCash}
@@ -438,31 +650,14 @@ export default function App() {
           onToggleSidebar={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           theme={theme}
           onToggleTheme={toggleTheme}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          activeRole={currentRole}
+          currentSchool={currentSchool}
+          onChangeRole={() => setCurrentRole(null)}
         />
 
-        {/* Firebase Live Status Alert Banner */}
-        {!user && (
-          <div className="bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-blue-600/10 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-blue-900/20 border-b border-blue-200 dark:border-blue-900/40 px-4 py-2.5 flex items-center justify-between text-xs text-blue-900 dark:text-blue-200">
-            <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-amber-500 shrink-0" />
-              <span>
-                <strong>Base de données Firebase Firestore :</strong> Connectez-vous avec votre e-mail ou compte Google pour enregistrer et synchroniser toutes les données en temps réel sur <span className="font-mono font-bold">erp-adlon</span>.
-              </span>
-            </div>
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-2xs transition-colors shrink-0 cursor-pointer ml-3"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Se connecter</span>
-            </button>
-          </div>
-        )}
-
-        {/* Dynamic View Canvas */}
+        {/* Dynamic View Canvas according to authorized activeTab */}
         <main className="flex-1 p-3.5 sm:p-5 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          {activeTab === 'dashboard' && (
+          {activeTab === 'dashboard' && roleConfig.allowedTabs.includes('dashboard') && (
             <DashboardView
               config={config}
               students={students}
@@ -470,11 +665,15 @@ export default function App() {
               onOpenWhatsApp={(student) => setWhatsAppModalData({ student, defaultType: 'relance' })}
               onOpenStudentDetail={(student) => setDetailModalStudent(student)}
               onOpenPayment={(student) => setPaymentModalStudent(student)}
-              onNavigateTab={(tab) => setActiveTab(tab)}
+              onNavigateTab={(tab) => {
+                if (roleConfig.allowedTabs.includes(tab)) {
+                  setActiveTab(tab);
+                }
+              }}
             />
           )}
 
-          {activeTab === 'enrollment' && (
+          {activeTab === 'enrollment' && roleConfig.allowedTabs.includes('enrollment') && (
             <EnrollmentView
               config={config}
               students={students}
@@ -488,7 +687,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'finance' && (
+          {activeTab === 'finance' && roleConfig.allowedTabs.includes('finance') && (
             <FinanceView
               config={config}
               students={students}
@@ -499,7 +698,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'crm' && (
+          {activeTab === 'crm' && roleConfig.allowedTabs.includes('crm') && (
             <CrmWhatsAppView
               config={config}
               students={students}
@@ -509,7 +708,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'pedagogy' && (
+          {activeTab === 'pedagogy' && roleConfig.allowedTabs.includes('pedagogy') && (
             <PedagogyRadarView
               config={config}
               students={students}
@@ -518,7 +717,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'grades' && (
+          {activeTab === 'grades' && roleConfig.allowedTabs.includes('grades') && (
             <GradesView
               config={config}
               students={students}
@@ -529,7 +728,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'staff' && (
+          {activeTab === 'staff' && roleConfig.allowedTabs.includes('staff') && (
             <StaffPayrollView
               config={config}
               staff={staff}
@@ -537,18 +736,33 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'config' && (
+          {activeTab === 'config' && roleConfig.allowedTabs.includes('config') && (
             <ConfigView
               config={config}
               onSaveConfig={(updated) => {
                 setConfig(updated);
+                if (currentSchool) {
+                  const updatedSchool: School = {
+                    ...currentSchool,
+                    name: updated.schoolName || currentSchool.name,
+                    city: updated.schoolCity || currentSchool.city,
+                    logo: updated.schoolLogo || currentSchool.logo,
+                    logoUrl: updated.schoolLogo || currentSchool.logoUrl,
+                    academicYear: updated.academicYear || currentSchool.academicYear,
+                    motto: updated.schoolMotto || currentSchool.motto,
+                    phone: updated.schoolPhone || currentSchool.phone,
+                    address: updated.schoolAddress || currentSchool.address,
+                  };
+                  setCurrentSchool(updatedSchool);
+                  localStorage.setItem(`selected_school_${user?.uid || 'default'}`, JSON.stringify(updatedSchool));
+                }
                 if (user) {
-                  saveSchoolConfigToFirestore(updated).catch(console.warn);
+                  saveSchoolConfigToFirestore(updated, currentSchool?.id).catch(console.warn);
                 }
                 addAuditLog(
-                  user?.displayName || 'M. Gaston Bantsimba',
-                  'Directeur',
-                  'Mise à jour de la grille tarifaire et des paramètres',
+                  user?.displayName || 'Dirigeant',
+                  'Direction',
+                  `Mise à jour des paramètres & identité de l'établissement (${updated.schoolName || 'École'})`,
                   'Configuration'
                 );
               }}
@@ -556,31 +770,24 @@ export default function App() {
           )}
         </main>
 
-        {/* Minimalist Apple-style Footer */}
+        {/* Minimalist Footer */}
         <footer className="no-print border-t border-[#E2E8F0] dark:border-[#1E293B] bg-white dark:bg-[#111827] py-4 px-6 text-xs text-[#64748B] dark:text-[#94A3B8]">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>
-              <strong className="text-[#1D1D1F] dark:text-[#F8FAFC] font-semibold">{config.schoolName || 'ERP ADLON'}</strong> • {config.schoolCity || 'Brazzaville'} • Année {config.academicYear || '2026-2027'}
+              <strong className="text-[#1D1D1F] dark:text-[#F8FAFC] font-semibold">{currentSchool.name}</strong> • {currentSchool.city} • Année {currentSchool.academicYear}
             </span>
             <div className="flex items-center gap-4 text-[#64748B] dark:text-[#94A3B8]">
-              <span>Devise : {config.currency || 'FCFA'}</span>
+              <span>Rôle actif : <strong className="text-blue-500 font-semibold">{roleConfig.title}</strong></span>
+              <span>•</span>
+              <span>Devise : {currentSchool.currency}</span>
               <span>•</span>
               <span>Firestore : <strong className="text-amber-500 font-mono">erp-adlon</strong></span>
-              <span>•</span>
-              <span className="text-[#34C759] font-medium flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]"></span>
-                Synchronisation active (99.9%)
-              </span>
             </div>
           </div>
         </footer>
       </div>
 
       {/* 3. MODALS */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
       {whatsAppModalData && (
         <WhatsAppPreviewModal
           student={whatsAppModalData.student}
@@ -589,7 +796,7 @@ export default function App() {
           config={config}
           onClose={() => setWhatsAppModalData(null)}
           onLoggedAction={(msg) =>
-            addAuditLog('Agent CRM', 'Direction', msg, 'CRM WhatsApp')
+            addAuditLog(user?.displayName || 'Agent CRM', 'Direction', msg, 'CRM WhatsApp')
           }
         />
       )}

@@ -240,7 +240,7 @@ export function computeStudentReport(
     totalCoefficients: targetEntry.totalCoeff,
     generalAverage: targetEntry.average,
     classRank,
-    totalStudents: Math.max(effectiveClassStudents.length, student.totalStudentsInClass || 1),
+    totalStudents: effectiveClassStudents.length,
     classAverage,
     highestAverage,
     lowestAverage,

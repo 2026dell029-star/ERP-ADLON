@@ -434,7 +434,7 @@ export const FinanceView: React.FC<FinanceViewProps> = ({
                           <button
                             onClick={() => onOpenWhatsApp(s)}
                             className="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0071E3] dark:text-[#38BDF8] hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                            title="Relance WhatsApp (+242)"
+                            title="CRM WhatsApp"
                           >
                             <MessageCircle className="w-3.5 h-3.5" />
                           </button>

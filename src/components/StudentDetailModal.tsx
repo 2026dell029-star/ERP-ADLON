@@ -228,7 +228,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             className="flex-1 sm:flex-initial px-4 py-2.5 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors"
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Ouvrir WhatsApp (+242)</span>
+            <span>CRM WhatsApp</span>
           </button>
           <button
             onClick={() => onOpenPayment(student)}

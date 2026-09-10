@@ -197,9 +197,19 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
 
               {/* Center school emblem & title */}
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-[#0071E3] to-[#0284C7] text-white mb-1 shadow-sm print:bg-none print:text-black">
-                  <Building2 className="w-6 h-6" />
-                </div>
+                {config?.schoolLogo ? (
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 p-1 mb-1 shadow-sm overflow-hidden print:border-black print:bg-white">
+                    <img
+                      src={config.schoolLogo}
+                      alt={schoolName}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-[#0071E3] to-[#0284C7] text-white mb-1 shadow-sm print:bg-none print:text-black">
+                    <Building2 className="w-6 h-6" />
+                  </div>
+                )}
                 <h1 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white print:text-black">
                   {schoolName}
                 </h1>

@@ -154,6 +154,7 @@ export interface SubjectDefinition {
 
 export interface SchoolConfig {
   schoolName?: string; // Nom officiel de l'établissement
+  schoolLogo?: string; // Logo de l'école (URL ou base64)
   schoolMotto?: string; // Devise officielle de l'école
   schoolAddress?: string; // Adresse physique
   schoolCity?: string; // Ville
@@ -219,3 +220,86 @@ export interface UserStats {
 }
 
 export type NavigationTab = 'dashboard' | 'enrollment' | 'finance' | 'crm' | 'pedagogy' | 'grades' | 'staff' | 'config';
+
+export type UserRole = 'dirigeant' | 'gestionnaire' | 'directeur';
+
+export interface School {
+  id: string;
+  name: string;
+  code: string;
+  city: string;
+  country: string;
+  currency: string;
+  academicYear: string;
+  logo?: string;
+  logoUrl?: string;
+  directorName?: string;
+  motto?: string;
+  phone?: string;
+  address?: string;
+  createdAt: string;
+  createdBy?: string;
+  adminEmails?: string[];
+  studentCount?: number;
+  config?: SchoolConfig;
+}
+
+export interface RolePermissionConfig {
+  id: UserRole;
+  title: string;
+  badge: string;
+  shortDesc: string;
+  fullDesc: string;
+  allowedTabs: NavigationTab[];
+  canManageFinances: boolean;
+  canManageEnrollment: boolean;
+  canEditGrades: boolean;
+  canManageStaff: boolean;
+  canEditConfig: boolean;
+  color: string;
+}
+
+export const ROLE_PERMISSIONS: Record<UserRole, RolePermissionConfig> = {
+  dirigeant: {
+    id: 'dirigeant',
+    title: 'Dirigeant',
+    badge: 'Accès Intégral',
+    shortDesc: 'Supervision globale, finances, inscriptions, bulletins et configuration.',
+    fullDesc: 'Accès illimité à l\'ensemble des modules de l\'ERP.',
+    allowedTabs: ['dashboard', 'enrollment', 'finance', 'crm', 'pedagogy', 'grades', 'staff', 'config'],
+    canManageFinances: true,
+    canManageEnrollment: true,
+    canEditGrades: true,
+    canManageStaff: true,
+    canEditConfig: true,
+    color: 'from-amber-500 to-orange-600',
+  },
+  gestionnaire: {
+    id: 'gestionnaire',
+    title: 'Gestionnaire',
+    badge: 'Finances & Inscriptions',
+    shortDesc: 'Limité à la partie financière et aux inscriptions.',
+    fullDesc: 'Inscriptions des élèves, calcul de scolarité, encaissements et suivi financier.',
+    allowedTabs: ['dashboard', 'enrollment', 'finance'],
+    canManageFinances: true,
+    canManageEnrollment: true,
+    canEditGrades: false,
+    canManageStaff: false,
+    canEditConfig: false,
+    color: 'from-blue-600 to-indigo-600',
+  },
+  directeur: {
+    id: 'directeur',
+    title: 'Directeur',
+    badge: 'Pédagogie & CRM WhatsApp',
+    shortDesc: 'Saisie des notes, bulletins scolaires, radar pédagogique et CRM WhatsApp.',
+    fullDesc: 'Direction pédagogique, saisie des notes, bulletins officiels et communication CRM WhatsApp.',
+    allowedTabs: ['dashboard', 'pedagogy', 'grades', 'crm'],
+    canManageFinances: false,
+    canManageEnrollment: false,
+    canEditGrades: true,
+    canManageStaff: false,
+    canEditConfig: false,
+    color: 'from-emerald-600 to-teal-600',
+  },
+};

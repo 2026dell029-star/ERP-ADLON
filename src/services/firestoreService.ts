@@ -12,19 +12,57 @@ import {
   limit,
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { SchoolConfig, Student, StaffMember, AuditLog } from '../types';
+import { SchoolConfig, Student, StaffMember, AuditLog, School } from '../types';
 
+const SCHOOLS_COLLECTION = 'schools';
 const SETTINGS_DOC = 'settings/schoolConfig';
 const STUDENTS_COLLECTION = 'students';
 const STAFF_COLLECTION = 'staff';
 const AUDIT_LOGS_COLLECTION = 'auditLogs';
 
+// ==================== ÉTABLISSEMENTS (SCHOOLS) ====================
+export function subscribeToSchools(
+  onData: (schools: School[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const colRef = collection(db, SCHOOLS_COLLECTION);
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const list: School[] = [];
+      snapshot.forEach((d) => {
+        list.push({ ...d.data(), id: d.id } as School);
+      });
+      onData(list);
+    },
+    (error) => {
+      console.warn('Erreur lecture Firestore Schools:', error);
+      if (onError) onError(error);
+      handleFirestoreError(error, OperationType.LIST, SCHOOLS_COLLECTION);
+    }
+  );
+}
+
+export async function saveSchoolToFirestore(school: School): Promise<void> {
+  const schoolRef = doc(db, SCHOOLS_COLLECTION, school.id);
+  try {
+    const cleanSchool = JSON.parse(JSON.stringify(school));
+    await setDoc(schoolRef, cleanSchool, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${SCHOOLS_COLLECTION}/${school.id}`);
+  }
+}
+
 // ==================== CONFIGURATION ====================
 export function subscribeToSchoolConfig(
   onData: (config: SchoolConfig) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
+  schoolId?: string
 ) {
-  const configDocRef = doc(db, 'settings', 'schoolConfig');
+  const configDocRef = schoolId 
+    ? doc(db, SCHOOLS_COLLECTION, schoolId, 'settings', 'config')
+    : doc(db, 'settings', 'schoolConfig');
+
   return onSnapshot(
     configDocRef,
     (snapshot) => {
@@ -40,8 +78,11 @@ export function subscribeToSchoolConfig(
   );
 }
 
-export async function saveSchoolConfigToFirestore(config: SchoolConfig): Promise<void> {
-  const configDocRef = doc(db, 'settings', 'schoolConfig');
+export async function saveSchoolConfigToFirestore(config: SchoolConfig, schoolId?: string): Promise<void> {
+  const configDocRef = schoolId
+    ? doc(db, SCHOOLS_COLLECTION, schoolId, 'settings', 'config')
+    : doc(db, 'settings', 'schoolConfig');
+
   try {
     // Sanitize any undefined values
     const cleanConfig = JSON.parse(JSON.stringify(config));
@@ -54,9 +95,13 @@ export async function saveSchoolConfigToFirestore(config: SchoolConfig): Promise
 // ==================== ÉLÈVES (STUDENTS) ====================
 export function subscribeToStudents(
   onData: (students: Student[]) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
+  schoolId?: string
 ) {
-  const colRef = collection(db, STUDENTS_COLLECTION);
+  const colRef = schoolId
+    ? collection(db, SCHOOLS_COLLECTION, schoolId, 'students')
+    : collection(db, STUDENTS_COLLECTION);
+
   return onSnapshot(
     colRef,
     (snapshot) => {
@@ -76,8 +121,11 @@ export function subscribeToStudents(
   );
 }
 
-export async function saveStudentToFirestore(student: Student): Promise<void> {
-  const studentRef = doc(db, STUDENTS_COLLECTION, student.id);
+export async function saveStudentToFirestore(student: Student, schoolId?: string): Promise<void> {
+  const studentRef = schoolId
+    ? doc(db, SCHOOLS_COLLECTION, schoolId, 'students', student.id)
+    : doc(db, STUDENTS_COLLECTION, student.id);
+
   try {
     const cleanStudent = JSON.parse(JSON.stringify(student));
     await setDoc(studentRef, cleanStudent, { merge: true });
@@ -86,8 +134,11 @@ export async function saveStudentToFirestore(student: Student): Promise<void> {
   }
 }
 
-export async function deleteStudentFromFirestore(id: string): Promise<void> {
-  const studentRef = doc(db, STUDENTS_COLLECTION, id);
+export async function deleteStudentFromFirestore(id: string, schoolId?: string): Promise<void> {
+  const studentRef = schoolId
+    ? doc(db, SCHOOLS_COLLECTION, schoolId, 'students', id)
+    : doc(db, STUDENTS_COLLECTION, id);
+
   try {
     await deleteDoc(studentRef);
   } catch (error) {
@@ -98,9 +149,13 @@ export async function deleteStudentFromFirestore(id: string): Promise<void> {
 // ==================== PERSONNEL (STAFF) ====================
 export function subscribeToStaff(
   onData: (staff: StaffMember[]) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
+  schoolId?: string
 ) {
-  const colRef = collection(db, STAFF_COLLECTION);
+  const colRef = schoolId
+    ? collection(db, SCHOOLS_COLLECTION, schoolId, 'staff')
+    : collection(db, STAFF_COLLECTION);
+
   return onSnapshot(
     colRef,
     (snapshot) => {
@@ -120,8 +175,11 @@ export function subscribeToStaff(
   );
 }
 
-export async function saveStaffToFirestore(member: StaffMember): Promise<void> {
-  const staffRef = doc(db, STAFF_COLLECTION, member.id);
+export async function saveStaffToFirestore(member: StaffMember, schoolId?: string): Promise<void> {
+  const staffRef = schoolId
+    ? doc(db, SCHOOLS_COLLECTION, schoolId, 'staff', member.id)
+    : doc(db, STAFF_COLLECTION, member.id);
+
   try {
     const cleanMember = JSON.parse(JSON.stringify(member));
     await setDoc(staffRef, cleanMember, { merge: true });
@@ -130,8 +188,11 @@ export async function saveStaffToFirestore(member: StaffMember): Promise<void> {
   }
 }
 
-export async function deleteStaffFromFirestore(id: string): Promise<void> {
-  const staffRef = doc(db, STAFF_COLLECTION, id);
+export async function deleteStaffFromFirestore(id: string, schoolId?: string): Promise<void> {
+  const staffRef = schoolId
+    ? doc(db, SCHOOLS_COLLECTION, schoolId, 'staff', id)
+    : doc(db, STAFF_COLLECTION, id);
+
   try {
     await deleteDoc(staffRef);
   } catch (error) {
@@ -142,9 +203,13 @@ export async function deleteStaffFromFirestore(id: string): Promise<void> {
 // ==================== JOURNAUX D'AUDIT (AUDIT LOGS) ====================
 export function subscribeToAuditLogs(
   onData: (logs: AuditLog[]) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
+  schoolId?: string
 ) {
-  const colRef = collection(db, AUDIT_LOGS_COLLECTION);
+  const colRef = schoolId
+    ? collection(db, SCHOOLS_COLLECTION, schoolId, 'auditLogs')
+    : collection(db, AUDIT_LOGS_COLLECTION);
+
   const q = query(colRef, orderBy('timestamp', 'desc'), limit(50));
   return onSnapshot(
     q,
@@ -165,8 +230,11 @@ export function subscribeToAuditLogs(
   );
 }
 
-export async function addAuditLogToFirestore(log: AuditLog): Promise<void> {
-  const logRef = doc(db, AUDIT_LOGS_COLLECTION, log.id);
+export async function addAuditLogToFirestore(log: AuditLog, schoolId?: string): Promise<void> {
+  const logRef = schoolId
+    ? doc(db, SCHOOLS_COLLECTION, schoolId, 'auditLogs', log.id)
+    : doc(db, AUDIT_LOGS_COLLECTION, log.id);
+
   try {
     const cleanLog = JSON.parse(JSON.stringify(log));
     await setDoc(logRef, cleanLog);
@@ -179,24 +247,29 @@ export async function addAuditLogToFirestore(log: AuditLog): Promise<void> {
 export async function seedInitialFirestoreData(
   defaultConfig: SchoolConfig,
   defaultStudents: Student[],
-  defaultStaff: StaffMember[]
+  defaultStaff: StaffMember[],
+  schoolId?: string
 ): Promise<boolean> {
   try {
+    const configPath = schoolId ? `schools/${schoolId}/settings/schoolConfig` : 'settings/schoolConfig';
+    const studentsCol = schoolId ? `schools/${schoolId}/${STUDENTS_COLLECTION}` : STUDENTS_COLLECTION;
+    const staffCol = schoolId ? `schools/${schoolId}/${STAFF_COLLECTION}` : STAFF_COLLECTION;
+
     // 1. Check if config exists
-    const configSnap = await getDoc(doc(db, 'settings', 'schoolConfig'));
+    const configSnap = await getDoc(doc(db, configPath));
     let seeded = false;
 
     if (!configSnap.exists()) {
-      await setDoc(doc(db, 'settings', 'schoolConfig'), JSON.parse(JSON.stringify(defaultConfig)));
+      await setDoc(doc(db, configPath), JSON.parse(JSON.stringify(defaultConfig)));
       seeded = true;
     }
 
     // 2. Check if students exist
-    const studentsSnap = await getDocs(query(collection(db, STUDENTS_COLLECTION), limit(1)));
+    const studentsSnap = await getDocs(query(collection(db, studentsCol), limit(1)));
     if (studentsSnap.empty && defaultStudents.length > 0) {
       const batch = writeBatch(db);
       defaultStudents.forEach((student) => {
-        const ref = doc(db, STUDENTS_COLLECTION, student.id);
+        const ref = doc(db, studentsCol, student.id);
         batch.set(ref, JSON.parse(JSON.stringify(student)));
       });
       await batch.commit();
@@ -204,11 +277,11 @@ export async function seedInitialFirestoreData(
     }
 
     // 3. Check if staff exists
-    const staffSnap = await getDocs(query(collection(db, STAFF_COLLECTION), limit(1)));
+    const staffSnap = await getDocs(query(collection(db, staffCol), limit(1)));
     if (staffSnap.empty && defaultStaff.length > 0) {
       const batch = writeBatch(db);
       defaultStaff.forEach((member) => {
-        const ref = doc(db, STAFF_COLLECTION, member.id);
+        const ref = doc(db, staffCol, member.id);
         batch.set(ref, JSON.parse(JSON.stringify(member)));
       });
       await batch.commit();

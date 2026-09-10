@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { SchoolConfig, ClassDefinition, SubjectDefinition, StudentCycle } from '../types';
 import { formatFCFA, getClassMonthlyTuition, getClassAnnualTuition } from '../utils/formatters';
 import { 
@@ -26,7 +26,11 @@ import {
   Coins,
   Search,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  Upload,
+  Image as ImageIcon,
+  CheckCircle2,
+  X
 } from 'lucide-react';
 
 interface ConfigViewProps {
@@ -80,10 +84,35 @@ const STANDARD_CURRICULUM_TEMPLATES: Record<StudentCycle, { name: string; coeffi
   ],
 };
 
+const PRESET_LOGOS = [
+  {
+    id: 'preset-1',
+    name: 'Blason Royal & Étoile Dorée',
+    data: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="%231E3A8A" stroke="%23F59E0B" stroke-width="4"/><path d="M60 18 L95 35 L95 72 C95 90 60 104 60 104 C60 104 25 90 25 72 L25 35 Z" fill="%230284C7" stroke="%23FBBF24" stroke-width="3"/><polygon points="60,36 65,49 79,50 68,60 72,74 60,65 48,74 52,60 41,50 55,49" fill="%23FDE047"/><text x="60" y="93" font-size="8" font-weight="bold" fill="white" text-anchor="middle" font-family="sans-serif">EXCELLENCE</text></svg>`,
+  },
+  {
+    id: 'preset-2',
+    name: 'Flambeau du Savoir & Lauriers',
+    data: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="%230F172A" stroke="%2310B981" stroke-width="4"/><path d="M60 22 L64 42 L56 42 Z" fill="%23EF4444"/><path d="M55 42 L65 42 L63 80 L57 80 Z" fill="%23F59E0B"/><path d="M35 50 C28 68 40 85 60 90 C80 85 92 68 85 50" fill="none" stroke="%2334D399" stroke-width="4"/><circle cx="60" cy="30" r="4" fill="%23FBBF24"/><text x="60" y="104" font-size="8" font-weight="bold" fill="%23F8FAFC" text-anchor="middle" font-family="sans-serif">SAVOIR</text></svg>`,
+  },
+  {
+    id: 'preset-3',
+    name: 'Livre Ouvert & Sceau Académique',
+    data: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="%237C3AED" stroke="%23FDE047" stroke-width="4"/><path d="M30 52 C42 46 54 48 60 55 C66 48 78 46 90 52 L90 80 C78 74 66 76 60 82 C54 76 42 74 30 80 Z" fill="%23FFFFFF"/><path d="M60 55 L60 82" stroke="%237C3AED" stroke-width="3"/><text x="60" y="38" font-size="10" font-weight="bold" fill="%23FDE047" text-anchor="middle" font-family="sans-serif">ADLON</text><text x="60" y="100" font-size="7" font-weight="bold" fill="white" text-anchor="middle" font-family="sans-serif">ÉDUCATION</text></svg>`,
+  },
+  {
+    id: 'preset-4',
+    name: 'Bouclier Vert & Écusson National',
+    data: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="108" height="108" x="6" y="6" rx="28" fill="%23047857" stroke="%23FCD34D" stroke-width="4"/><path d="M60 26 L90 42 L60 58 L30 42 Z" fill="%23FCD34D"/><rect x="50" y="58" width="20" height="32" fill="%23FFFFFF" rx="3"/><line x1="60" y1="58" x2="60" y2="90" stroke="%23047857" stroke-width="3"/><text x="60" y="104" font-size="8" font-weight="bold" fill="%23FCD34D" text-anchor="middle" font-family="sans-serif">RIGUEUR</text></svg>`,
+  },
+];
+
 export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<SchoolConfig>(() => ({
     ...config,
     schoolName: config.schoolName || 'Complexe Scolaire Privé ADLON',
+    schoolLogo: config.schoolLogo || '',
     schoolMotto: config.schoolMotto || '« Rigueur - Discipline - Excellence »',
     schoolAddress: config.schoolAddress || 'Bacongo, Brazzaville',
     schoolCity: config.schoolCity || 'Brazzaville',
@@ -108,6 +137,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
       ...prev,
       ...config,
       schoolName: config.schoolName || prev.schoolName,
+      schoolLogo: config.schoolLogo !== undefined ? config.schoolLogo : prev.schoolLogo,
       schoolMotto: config.schoolMotto || prev.schoolMotto,
       schoolAddress: config.schoolAddress || prev.schoolAddress,
       schoolCity: config.schoolCity || prev.schoolCity,
@@ -122,7 +152,51 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
   }, [config]);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'structure' | 'general' | 'tuition'>('tuition');
+
+  // Handle Logo File Upload (converting to data URL base64)
+  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner un fichier image valide (PNG, JPG, SVG, WebP).');
+      return;
+    }
+
+    if (file.size > 2.5 * 1024 * 1024) {
+      alert('Veuillez choisir une image inférieure à 2.5 Mo pour garantir des performances optimales.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      if (base64) {
+        setFormData((prev) => ({ ...prev, schoolLogo: base64 }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSelectPresetLogo = (dataUri: string) => {
+    setFormData((prev) => ({ ...prev, schoolLogo: dataUri }));
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData((prev) => ({ ...prev, schoolLogo: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    onSaveConfig(formData);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 4500);
+  };
 
   // Selected Cycle for pedagogical structure
   const [selectedCycle, setSelectedCycle] = useState<StudentCycle>('Primaire');
@@ -169,13 +243,6 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
     } else {
       setSelectedClassName('');
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSaveConfig(formData);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
   };
 
   // Update Monthly Tuition for a specific class
@@ -1352,223 +1419,382 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: INFORMATIONS GÉNÉRALES ÉCOLE & CONTACT                            */}
+        {/* TAB 3: INFORMATIONS GÉNÉRALES ÉCOLE, LOGO & CONTACT                      */}
         {/* ========================================================================= */}
         {activeTab === 'general' && (
-          <div className="p-6 bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] shadow-sm space-y-6 animate-in fade-in duration-200">
-            <div>
-              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] pb-1 flex items-center gap-2">
-                <School className="w-4 h-4 text-[#0071E3]" />
-                <span>Identité Officielle de l'Établissement</span>
-              </h3>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-                Ces informations sont automatiquement appliquées sur tous les bulletins de notes, reçus de scolarité, certificats d'inscription, messages WhatsApp et en-têtes officiels.
-              </p>
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* 1. LOGO & VISUAL IDENTITY CARD */}
+            <div className="p-6 bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-[#1E293B] pb-4">
+                <div>
+                  <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] pb-1 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-[#0071E3]" />
+                    <span>Logo & Identité Visuelle de l'Établissement</span>
+                  </h3>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                    Ce logo officiel apparaîtra instantanément sur la barre latérale, l'en-tête, les bulletins de notes et les reçus de paiement.
+                  </p>
+                </div>
+                {formData.schoolLogo && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveLogo}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-100 transition-colors shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Supprimer le logo</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Logo Preview Box */}
+                <div className="lg:col-span-4 flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-50 dark:bg-[#0F172A] border-2 border-dashed border-slate-200 dark:border-slate-800 text-center">
+                  <div className="w-28 h-28 rounded-2xl bg-white dark:bg-[#151D2E] border border-slate-200 dark:border-slate-700 shadow-md p-2 flex items-center justify-center overflow-hidden mb-3">
+                    {formData.schoolLogo ? (
+                      <img
+                        src={formData.schoolLogo}
+                        alt="Logo École"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-slate-400">
+                        <School className="w-10 h-10 mb-1 opacity-50" />
+                        <span className="text-[10px] font-semibold">Aucun logo</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                    {formData.schoolName || 'Logo Établissement'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Format recommandé : Carré (PNG, JPG, SVG, WebP)
+                  </span>
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleLogoFileUpload}
+                    accept="image/png, image/jpeg, image/svg+xml, image/webp"
+                    className="hidden"
+                  />
+
+                  <div className="flex items-center gap-2 mt-4 w-full">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Importer une image</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Direct URL or Preset Logos */}
+                <div className="lg:col-span-8 space-y-4">
+                  <div>
+                    <label className="block font-semibold text-xs text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
+                      Ou coller l'URL d'une image en ligne :
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={formData.schoolLogo || ''}
+                        onChange={(e) => setFormData({ ...formData, schoolLogo: e.target.value })}
+                        placeholder="https://mon-ecole.cg/assets/logo.png"
+                        className="flex-1 p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-xs text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Preset Logos Selector */}
+                  <div>
+                    <span className="block font-semibold text-xs text-[#64748B] dark:text-[#94A3B8] mb-2">
+                      Ou choisir un blason académique prédéfini :
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {PRESET_LOGOS.map((preset) => {
+                        const isSelected = formData.schoolLogo === preset.data;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => handleSelectPresetLogo(preset.data)}
+                            className={`p-3 rounded-2xl border text-center flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20 shadow-xs'
+                                : 'bg-slate-50 dark:bg-[#0F172A] border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                            }`}
+                          >
+                            <img
+                              src={preset.data}
+                              alt={preset.name}
+                              className="w-12 h-12 object-contain"
+                            />
+                            <span className="text-[10px] font-medium text-[#0F172A] dark:text-[#F8FAFC] line-clamp-1">
+                              {preset.name}
+                            </span>
+                            {isSelected && (
+                              <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-0.5">
+                                <Check className="w-3 h-3" /> Sélectionné
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-              <div className="sm:col-span-2">
-                <label className="block font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
-                  Nom de l'Établissement Scolaire :
-                </label>
-                <input
-                  type="text"
-                  value={formData.schoolName || ''}
-                  onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
-                  placeholder="ex: Complexe Scolaire Privé ADLON"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-bold text-sm text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                  required
-                />
-              </div>
-
+            {/* 2. GENERAL INFO FORM */}
+            <div className="p-6 bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] shadow-sm space-y-6">
               <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Devise / Slogan :
-                </label>
-                <input
-                  type="text"
-                  value={formData.schoolMotto || ''}
-                  onChange={(e) => setFormData({ ...formData, schoolMotto: e.target.value })}
-                  placeholder="ex: « Rigueur - Discipline - Excellence »"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                />
+                <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] pb-1 flex items-center gap-2">
+                  <School className="w-4 h-4 text-[#0071E3]" />
+                  <span>Identité Officielle & Coordonnées</span>
+                </h3>
+                <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                  Ces informations sont automatiquement appliquées sur tous les bulletins de notes, reçus de scolarité, certificats d'inscription, messages WhatsApp et en-têtes officiels.
+                </p>
               </div>
 
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Année Scolaire en cours :
-                </label>
-                <input
-                  type="text"
-                  value={formData.academicYear || ''}
-                  onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
-                  placeholder="ex: 2026-2027"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-mono font-bold text-[#0071E3] dark:text-[#38BDF8] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Ville :
-                </label>
-                <input
-                  type="text"
-                  value={formData.schoolCity || ''}
-                  onChange={(e) => setFormData({ ...formData, schoolCity: e.target.value })}
-                  placeholder="ex: Brazzaville"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Pays :
-                </label>
-                <input
-                  type="text"
-                  value={formData.schoolCountry || ''}
-                  onChange={(e) => setFormData({ ...formData, schoolCountry: e.target.value })}
-                  placeholder="ex: République du Congo"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Direction Départementale / Académie :
-                </label>
-                <input
-                  type="text"
-                  value={formData.schoolDepartment || ''}
-                  onChange={(e) => setFormData({ ...formData, schoolDepartment: e.target.value })}
-                  placeholder="ex: Direction Départementale de Brazzaville"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Chef d'Établissement / Directeur :
-                </label>
-                <input
-                  type="text"
-                  value={formData.directorName || ''}
-                  onChange={(e) => setFormData({ ...formData, directorName: e.target.value })}
-                  placeholder="ex: M. Gaston Bantsimba"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Agrément Ministériel :
-                </label>
-                <input
-                  type="text"
-                  value={formData.ministerialApproval || ''}
-                  onChange={(e) => setFormData({ ...formData, ministerialApproval: e.target.value })}
-                  placeholder="ex: Agrément Ministériel N° 2024/MEP-DGEP/CAB"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Téléphone Principal :
-                </label>
-                <input
-                  type="text"
-                  value={formData.schoolPhone || ''}
-                  onChange={(e) => setFormData({ ...formData, schoolPhone: e.target.value })}
-                  placeholder="ex: +242 06 611 22 33 / 05 544 33 22"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Email Officiel :
-                </label>
-                <input
-                  type="email"
-                  value={formData.schoolEmail || ''}
-                  onChange={(e) => setFormData({ ...formData, schoolEmail: e.target.value })}
-                  placeholder="ex: direction@adlon-school.cg"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                />
-              </div>
-
-              <div className="sm:col-span-2 lg:col-span-3">
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Adresse Physique Complète :
-                </label>
-                <input
-                  type="text"
-                  value={formData.schoolAddress || ''}
-                  onChange={(e) => setFormData({ ...formData, schoolAddress: e.target.value })}
-                  placeholder="ex: Rue Mbaka, Bacongo, Brazzaville"
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Durée Standard de l'Année :
-                </label>
-                <div className="flex items-center gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                <div className="sm:col-span-2">
+                  <label className="block font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
+                    Nom de l'Établissement Scolaire :
+                  </label>
                   <input
-                    type="number"
-                    value={formData.schoolDurationMonths}
-                    onChange={(e) => setFormData({ ...formData, schoolDurationMonths: Number(e.target.value) })}
+                    type="text"
+                    value={formData.schoolName || ''}
+                    onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
+                    placeholder="ex: Complexe Scolaire Privé ADLON"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-bold text-sm text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Devise / Slogan :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.schoolMotto || ''}
+                    onChange={(e) => setFormData({ ...formData, schoolMotto: e.target.value })}
+                    placeholder="ex: « Rigueur - Discipline - Excellence »"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Année Scolaire en cours :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.academicYear || ''}
+                    onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
+                    placeholder="ex: 2026-2027"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-mono font-bold text-[#0071E3] dark:text-[#38BDF8] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Ville :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.schoolCity || ''}
+                    onChange={(e) => setFormData({ ...formData, schoolCity: e.target.value })}
+                    placeholder="ex: Brazzaville"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Pays :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.schoolCountry || ''}
+                    onChange={(e) => setFormData({ ...formData, schoolCountry: e.target.value })}
+                    placeholder="ex: République du Congo"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Direction Départementale / Académie :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.schoolDepartment || ''}
+                    onChange={(e) => setFormData({ ...formData, schoolDepartment: e.target.value })}
+                    placeholder="ex: Direction Départementale de Brazzaville"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Chef d'Établissement / Directeur :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.directorName || ''}
+                    onChange={(e) => setFormData({ ...formData, directorName: e.target.value })}
+                    placeholder="ex: M. Gaston Bantsimba"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Agrément Ministériel :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.ministerialApproval || ''}
+                    onChange={(e) => setFormData({ ...formData, ministerialApproval: e.target.value })}
+                    placeholder="ex: Agrément Ministériel N° 2024/MEP-DGEP/CAB"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Téléphone Principal :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.schoolPhone || ''}
+                    onChange={(e) => setFormData({ ...formData, schoolPhone: e.target.value })}
+                    placeholder="ex: +242 06 611 22 33 / 05 544 33 22"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Email Officiel :
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.schoolEmail || ''}
+                    onChange={(e) => setFormData({ ...formData, schoolEmail: e.target.value })}
+                    placeholder="ex: direction@adlon-school.cg"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Adresse Physique Complète :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.schoolAddress || ''}
+                    onChange={(e) => setFormData({ ...formData, schoolAddress: e.target.value })}
+                    placeholder="ex: Rue Mbaka, Bacongo, Brazzaville"
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Durée Standard de l'Année :
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={formData.schoolDurationMonths}
+                      onChange={(e) => setFormData({ ...formData, schoolDurationMonths: Number(e.target.value) })}
+                      className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                      required
+                    />
+                    <span className="text-[#64748B] dark:text-[#94A3B8] shrink-0 font-medium">mois</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Indicatif Téléphonique Pays :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.countryCode}
+                    onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                    className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-mono font-bold text-[#0071E3] dark:text-[#38BDF8] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                    required
+                  />
+                  <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1 block font-medium">+242 pour Congo-Brazzaville</span>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                    Devise Monétaire :
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.currency}
+                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                     className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
                     required
                   />
-                  <span className="text-[#64748B] dark:text-[#94A3B8] shrink-0 font-medium">mois</span>
+                  <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1 block font-medium">FCFA (Franc CFA XAF)</span>
                 </div>
-              </div>
-
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Indicatif Téléphonique Pays :
-                </label>
-                <input
-                  type="text"
-                  value={formData.countryCode}
-                  onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-mono font-bold text-[#0071E3] dark:text-[#38BDF8] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                  required
-                />
-                <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1 block font-medium">+242 pour Congo-Brazzaville</span>
-              </div>
-
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
-                  Devise Monétaire :
-                </label>
-                <input
-                  type="text"
-                  value={formData.currency}
-                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
-                  required
-                />
-                <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1 block font-medium">FCFA (Franc CFA XAF)</span>
               </div>
             </div>
           </div>
         )}
 
         {/* Global Save Bar */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200/80 dark:border-[#222F46]">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] shadow-sm">
+          <div className="flex items-center gap-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            <span>Toutes les modifications sont appliquées instantanément dès la validation.</span>
+          </div>
+
           <button
             type="submit"
-            className="flex items-center gap-2 px-6 py-3 bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-xs rounded-2xl shadow-md transition-all hover:scale-[1.02] active:scale-95"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-[#0071E3] hover:bg-[#0077ED] text-white font-bold text-xs rounded-2xl shadow-md transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
           >
             <Check className="w-4 h-4" />
-            <span>Enregistrer Tous les Paramètres & Tarifs</span>
+            <span>Enregistrer et Appliquer les Paramètres</span>
           </button>
         </div>
+
+        {/* Floating / Prominent Confirmation Toast Alert */}
+        {savedSuccess && (
+          <div className="p-4 rounded-2xl bg-emerald-600 text-white shadow-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-3 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <Check className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-bold text-sm">Modifications enregistrées avec succès !</p>
+                <p className="text-xs text-emerald-100">
+                  Les nouveaux paramètres et le logo de l'établissement sont maintenant appliqués à l'ensemble du logiciel.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSavedSuccess(false)}
+              className="p-1 rounded-lg hover:bg-white/20 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

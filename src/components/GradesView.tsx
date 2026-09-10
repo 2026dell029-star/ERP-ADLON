@@ -96,37 +96,54 @@ export const GradesView: React.FC<GradesViewProps> = ({
     });
   }, [students, selectedCycle, selectedClass, searchQuery]);
 
-  // Compute live averages and ranks for students currently loaded
+  // Compute live averages and ranks for students relative to their class level
   const studentReports = useMemo(() => {
     return classStudents.map((s) => {
+      const sameClassStudents = students.filter(
+        (st) => st.classLevel.toLowerCase().trim() === s.classLevel.toLowerCase().trim()
+      );
+      const effectiveSameClass = sameClassStudents.length > 0 ? sameClassStudents : [s];
+
+      const classAverages = effectiveSameClass.map((st) => {
+        const currentGrades = localGrades[st.id] || getStudentGradesForTerm(st, selectedTerm, config);
+        const { average } = calculateWeightedAverage(currentGrades);
+        return { studentId: st.id, average };
+      });
+
+      classAverages.sort((a, b) => b.average - a.average);
+      const targetIdx = classAverages.findIndex((entry) => entry.studentId === s.id);
+      const liveRank = targetIdx >= 0 ? targetIdx + 1 : 1;
+      const totalInClass = effectiveSameClass.length;
+
       const currentGrades = localGrades[s.id] || getStudentGradesForTerm(s, selectedTerm, config);
       const { average, totalPoints, totalCoeff } = calculateWeightedAverage(currentGrades);
+
       return {
         student: s,
         grades: currentGrades,
         average,
         totalPoints,
         totalCoeff,
+        liveRank,
+        totalInClass,
       };
     });
-  }, [classStudents, localGrades, selectedTerm, config]);
+  }, [classStudents, students, localGrades, selectedTerm, config]);
 
-  // Sort by average to determine live ranks
+  // Sort by average to determine display order
   const rankedReports = useMemo(() => {
     const list = [...studentReports];
     list.sort((a, b) => b.average - a.average);
-    return list.map((item, index) => ({
-      ...item,
-      liveRank: index + 1,
-    }));
+    return list;
   }, [studentReports]);
 
   // Lookup map for fast live rank lookup by studentId
   const liveRankMap = useMemo(() => {
-    const map = new Map<string, { rank: number; average: number; totalPoints: number; totalCoeff: number }>();
+    const map = new Map<string, { rank: number; totalInClass: number; average: number; totalPoints: number; totalCoeff: number }>();
     rankedReports.forEach((item) => {
       map.set(item.student.id, {
         rank: item.liveRank,
+        totalInClass: item.totalInClass,
         average: item.average,
         totalPoints: item.totalPoints,
         totalCoeff: item.totalCoeff,
@@ -517,7 +534,7 @@ export const GradesView: React.FC<GradesViewProps> = ({
       {/* VIEW MODE 2: RANKING & BULLETINS */}
       {viewMode === 'ranking' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {rankedReports.map(({ student, average, liveRank }) => {
+          {rankedReports.map(({ student, average, liveRank, totalInClass }) => {
             const mention = getCouncilMention(average);
             return (
               <div
@@ -536,7 +553,7 @@ export const GradesView: React.FC<GradesViewProps> = ({
                     </div>
                     <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-200 dark:border-amber-800/40 flex items-center gap-1">
                       <Trophy className="w-3.5 h-3.5" />
-                      <span>{liveRank === 1 ? '1er' : `${liveRank}ème`}</span>
+                      <span>{liveRank === 1 ? '1er' : `${liveRank}ème`} / {totalInClass}</span>
                     </span>
                   </div>
 
