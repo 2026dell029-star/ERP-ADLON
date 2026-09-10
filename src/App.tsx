@@ -25,8 +25,25 @@ import { PaymentModal } from './components/PaymentModal';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { ReportCardModal } from './components/ReportCardModal';
 import { PenaltyModal } from './components/PenaltyModal';
+import { AuthModal } from './components/AuthModal';
+import { useAuth } from './context/AuthContext';
+import {
+  subscribeToSchoolConfig,
+  subscribeToStudents,
+  subscribeToStaff,
+  subscribeToAuditLogs,
+  saveSchoolConfigToFirestore,
+  saveStudentToFirestore,
+  saveStaffToFirestore,
+  addAuditLogToFirestore,
+  seedInitialFirestoreData,
+} from './services/firestoreService';
+import { Flame, LogIn } from 'lucide-react';
 
 export default function App() {
+  const { user, loading } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   // Theme state: default to 'dark' for instant eye relief ("l'application est trop blanche ça fait mal aux yeux")
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('adlon_theme');
@@ -103,28 +120,77 @@ export default function App() {
     localStorage.setItem('adlon_staff', JSON.stringify(staff));
   }, [staff]);
 
+  // Real-time Firestore Subscriptions & Seeding (Only attach if auth is ready and user is authenticated)
+  useEffect(() => {
+    if (loading || !user) {
+      return;
+    }
+
+    // Attempt initial baseline seed if Firestore collections are empty
+    seedInitialFirestoreData(config, students, staff).catch((err) => {
+      console.warn('Initial seeding deferred:', err);
+    });
+
+    const unsubConfig = subscribeToSchoolConfig((remoteConfig) => {
+      if (remoteConfig && remoteConfig.schoolName) {
+        setConfig((prev) => ({ ...prev, ...remoteConfig }));
+      }
+    });
+
+    const unsubStudents = subscribeToStudents((remoteStudents) => {
+      if (remoteStudents && remoteStudents.length > 0) {
+        setStudents(remoteStudents);
+      }
+    });
+
+    const unsubStaff = subscribeToStaff((remoteStaff) => {
+      if (remoteStaff && remoteStaff.length > 0) {
+        setStaff(remoteStaff);
+      }
+    });
+
+    const unsubLogs = subscribeToAuditLogs((remoteLogs) => {
+      if (remoteLogs && remoteLogs.length > 0) {
+        setUserStats((prev) => ({ ...prev, recentAuditLogs: remoteLogs }));
+      }
+    });
+
+    return () => {
+      unsubConfig();
+      unsubStudents();
+      unsubStaff();
+      unsubLogs();
+    };
+  }, [user, loading]);
+
   // Log action helper
-  const addAuditLog = (user: string, role: string, action: string, category: any) => {
+  const addAuditLog = (author: string, role: string, action: string, category: any) => {
+    const newLog = {
+      id: `log-${Date.now()}`,
+      timestamp: "À l'instant",
+      user: author,
+      role,
+      action,
+      category,
+      ip: '197.214.21.84',
+      device: 'Session Web Active',
+    };
+
     setUserStats((prev) => ({
       ...prev,
-      recentAuditLogs: [
-        {
-          id: `log-${Date.now()}`,
-          timestamp: "À l'instant",
-          user,
-          role,
-          action,
-          category,
-          ip: '197.214.21.84',
-          device: 'Session Web Active',
-        },
-        ...prev.recentAuditLogs,
-      ],
+      recentAuditLogs: [newLog, ...prev.recentAuditLogs],
     }));
+
+    // Send to Firestore only if authenticated
+    if (user) {
+      addAuditLogToFirestore(newLog).catch((e) => console.warn('Audit log write error:', e));
+    }
   };
 
   // Penalty Application handler (financial or disciplinary)
   const handleApplyPenalty = (studentId: string, penalty: PenaltyRecord) => {
+    let updatedStudentObj: Student | null = null;
+
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== studentId) return s;
@@ -141,7 +207,7 @@ export default function App() {
         const newConductScore = Math.max(0, s.conductScore - pointsDeducted);
         const newDisciplinePoints = s.disciplinePoints + pointsDeducted;
 
-        return {
+        const updated: Student = {
           ...s,
           penalties: updatedPenalties,
           penaltyTotalAmount: newPenaltyTotal,
@@ -151,8 +217,15 @@ export default function App() {
           conductScore: newConductScore,
           disciplinePoints: newDisciplinePoints,
         };
+
+        updatedStudentObj = updated;
+        return updated;
       })
     );
+
+    if (updatedStudentObj && user) {
+      saveStudentToFirestore(updatedStudentObj).catch(console.warn);
+    }
 
     const targetStudent = students.find((s) => s.id === studentId);
     const studentName = targetStudent ? `${targetStudent.firstName} ${targetStudent.lastName}` : 'Élève';
@@ -166,6 +239,8 @@ export default function App() {
 
   // Penalty Cancellation/Removal handler
   const handleRemovePenalty = (studentId: string, penaltyId: string, cancelReason?: string) => {
+    let updatedStudentObj: Student | null = null;
+
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== studentId) return s;
@@ -193,7 +268,7 @@ export default function App() {
         const newConductScore = Math.min(20, s.conductScore + pointsRestored);
         const newDisciplinePoints = Math.max(0, s.disciplinePoints - pointsRestored);
 
-        return {
+        const updated: Student = {
           ...s,
           penalties: updatedPenalties,
           penaltyTotalAmount: newPenaltyTotal,
@@ -203,8 +278,15 @@ export default function App() {
           conductScore: newConductScore,
           disciplinePoints: newDisciplinePoints,
         };
+
+        updatedStudentObj = updated;
+        return updated;
       })
     );
+
+    if (updatedStudentObj && user) {
+      saveStudentToFirestore(updatedStudentObj).catch(console.warn);
+    }
 
     const targetStudent = students.find((s) => s.id === studentId);
     const studentName = targetStudent ? `${targetStudent.firstName} ${targetStudent.lastName}` : 'Élève';
@@ -218,6 +300,8 @@ export default function App() {
 
   // Payment recording handler
   const handleRecordPayment = (studentId: string, payment: PaymentRecord) => {
+    let updatedStudentObj: Student | null = null;
+
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== studentId) return s;
@@ -225,25 +309,36 @@ export default function App() {
         const newBalance = Math.max(0, s.totalDue - newTotalPaid);
         const newStatus: StudentStatus = newBalance <= 0 ? 'solde' : newTotalPaid > 0 ? 'partiel' : 'impaye';
 
-        return {
+        const updated: Student = {
           ...s,
           totalPaid: newTotalPaid,
           balanceRemaining: newBalance,
           status: newStatus,
           payments: [payment, ...s.payments],
         };
+
+        updatedStudentObj = updated;
+        return updated;
       })
     );
 
+    if (updatedStudentObj && user) {
+      saveStudentToFirestore(updatedStudentObj).catch(console.warn);
+    }
+
     // Increase available bank cash
-    setConfig((prev) => ({
-      ...prev,
-      availableBankCash: prev.availableBankCash + payment.amount,
-    }));
+    const updatedConfig: SchoolConfig = {
+      ...config,
+      availableBankCash: config.availableBankCash + payment.amount,
+    };
+    setConfig(updatedConfig);
+    if (user) {
+      saveSchoolConfigToFirestore(updatedConfig).catch(console.warn);
+    }
 
     // Add Audit Log
     const targetStudent = students.find((s) => s.id === studentId);
-    const studentName = targetStudent ? `${targetStudent.firstName} ${targetStudent.lastName} (${targetStudent.classLevel})` : 'Élève';
+    const studentName = targetStudent ? `${targetStudent.firstName} ${targetStudent.lastName}` : 'Élève';
     addAuditLog(
       payment.cashierName,
       'Comptable',
@@ -255,8 +350,12 @@ export default function App() {
   // Add new student (e.g. from Prorata simulator)
   const handleAddNewStudent = (newStudent: Student) => {
     setStudents((prev) => [newStudent, ...prev]);
+    if (user) {
+      saveStudentToFirestore(newStudent).catch(console.warn);
+    }
+
     addAuditLog(
-      'M. Gaston Bantsimba',
+      user?.displayName || 'M. Gaston Bantsimba',
       'Directeur',
       `Inscription Prorata Temporis de ${newStudent.firstName} ${newStudent.lastName} (${newStudent.classLevel}) - ${newStudent.monthsEnrolled} mois`,
       'Configuration'
@@ -266,8 +365,12 @@ export default function App() {
   // Add new staff
   const handleAddNewStaff = (newStaff: StaffMember) => {
     setStaff((prev) => [...prev, newStaff]);
+    if (user) {
+      saveStaffToFirestore(newStaff).catch(console.warn);
+    }
+
     addAuditLog(
-      'M. Gaston Bantsimba',
+      user?.displayName || 'M. Gaston Bantsimba',
       'Directeur',
       `Création du contrat de ${newStaff.name} (${newStaff.role} - ${newStaff.contractType})`,
       'Sécurité'
@@ -277,8 +380,14 @@ export default function App() {
   // Update students (e.g. from GradesView)
   const handleUpdateStudents = (updatedStudents: Student[]) => {
     setStudents(updatedStudents);
+    if (user) {
+      updatedStudents.forEach((st) => {
+        saveStudentToFirestore(st).catch(console.warn);
+      });
+    }
+
     addAuditLog(
-      'M. Aimé Loubaki',
+      user?.displayName || 'M. Aimé Loubaki',
       'Corps Enseignant',
       'Mise à jour des notes trimestrielles et recalcul automatique des rangs',
       'Pédagogie'
@@ -315,6 +424,7 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         config={config}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       {/* 2. MAIN APPLICATION CONTENT AREA */}
@@ -328,7 +438,27 @@ export default function App() {
           onToggleSidebar={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           theme={theme}
           onToggleTheme={toggleTheme}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
         />
+
+        {/* Firebase Live Status Alert Banner */}
+        {!user && (
+          <div className="bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-blue-600/10 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-blue-900/20 border-b border-blue-200 dark:border-blue-900/40 px-4 py-2.5 flex items-center justify-between text-xs text-blue-900 dark:text-blue-200">
+            <div className="flex items-center gap-2">
+              <Flame className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>
+                <strong>Base de données Firebase Firestore :</strong> Connectez-vous avec votre e-mail ou compte Google pour enregistrer et synchroniser toutes les données en temps réel sur <span className="font-mono font-bold">erp-adlon</span>.
+              </span>
+            </div>
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-2xs transition-colors shrink-0 cursor-pointer ml-3"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Se connecter</span>
+            </button>
+          </div>
+        )}
 
         {/* Dynamic View Canvas */}
         <main className="flex-1 p-3.5 sm:p-5 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
@@ -412,8 +542,11 @@ export default function App() {
               config={config}
               onSaveConfig={(updated) => {
                 setConfig(updated);
+                if (user) {
+                  saveSchoolConfigToFirestore(updated).catch(console.warn);
+                }
                 addAuditLog(
-                  'M. Gaston Bantsimba',
+                  user?.displayName || 'M. Gaston Bantsimba',
                   'Directeur',
                   'Mise à jour de la grille tarifaire et des paramètres',
                   'Configuration'
@@ -432,11 +565,11 @@ export default function App() {
             <div className="flex items-center gap-4 text-[#64748B] dark:text-[#94A3B8]">
               <span>Devise : {config.currency || 'FCFA'}</span>
               <span>•</span>
-              <span>Indicatif : {config.countryCode || '+242'} ({config.schoolCountry || 'Congo'})</span>
+              <span>Firestore : <strong className="text-amber-500 font-mono">erp-adlon</strong></span>
               <span>•</span>
               <span className="text-[#34C759] font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]"></span>
-                Système opérationnel (99.9%)
+                Synchronisation active (99.9%)
               </span>
             </div>
           </div>
@@ -444,6 +577,10 @@ export default function App() {
       </div>
 
       {/* 3. MODALS */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
       {whatsAppModalData && (
         <WhatsAppPreviewModal
           student={whatsAppModalData.student}

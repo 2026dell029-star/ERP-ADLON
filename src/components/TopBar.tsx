@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationTab } from '../types';
 import { formatFCFA } from '../utils/formatters';
+import { useAuth } from '../context/AuthContext';
 import { 
   Menu, 
   Search, 
@@ -8,7 +9,10 @@ import {
   Wallet,
   Calendar,
   Sun,
-  Moon
+  Moon,
+  Flame,
+  User as UserIcon,
+  LogIn
 } from 'lucide-react';
 
 interface TopBarProps {
@@ -19,6 +23,7 @@ interface TopBarProps {
   onQuickWhatsAppRelance: () => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
+  onOpenAuthModal?: () => void;
 }
 
 const TAB_TITLES: Record<NavigationTab, { title: string; subtitle: string }> = {
@@ -64,7 +69,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   onQuickWhatsAppRelance,
   theme,
   onToggleTheme,
+  onOpenAuthModal,
 }) => {
+  const { user } = useAuth();
   const current = TAB_TITLES[activeTab] || TAB_TITLES.dashboard;
   const cashGap = availableCash - monthlyPayroll;
   const isDeficit = cashGap < 0;
@@ -91,12 +98,29 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Right: Theme switch, Cash Capsule & WhatsApp Action */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
+      {/* Right: Firebase Auth, Theme switch, Cash Capsule & WhatsApp Action */}
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Firebase Auth Pill */}
+        <button
+          onClick={onOpenAuthModal}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer shadow-2xs ${
+            user
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20'
+              : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100'
+          }`}
+          title={user ? `Connecté: ${user.email}` : 'Connexion à Firebase erp-adlon'}
+        >
+          <Flame className={`w-3.5 h-3.5 ${user ? 'text-amber-500' : 'text-blue-500'}`} />
+          <span className="hidden sm:inline font-mono">
+            {user ? (user.displayName || user.email?.split('@')[0] || 'Connecté') : 'Connexion'}
+          </span>
+          {user && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
+        </button>
+
         {/* Quick Theme Toggle Button */}
         <button
           onClick={onToggleTheme}
-          className="w-9 h-9 rounded-full border border-slate-200/80 dark:border-[#222F46] bg-white dark:bg-[#151D2E] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-[#0F172A] dark:text-[#F8FAFC] flex items-center justify-center shadow-2xs transition-all"
+          className="w-9 h-9 rounded-full border border-slate-200/80 dark:border-[#222F46] bg-white dark:bg-[#151D2E] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-[#0F172A] dark:text-[#F8FAFC] flex items-center justify-center shadow-2xs transition-all cursor-pointer"
           title={theme === 'dark' ? 'Basculer en Mode Clair' : 'Basculer en Mode Sombre'}
           aria-label="Changer de thème"
         >
@@ -108,7 +132,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
 
         {/* Available Cash vs Payroll Capsule */}
-        <div className="hidden md:flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] text-xs shadow-2xs">
+        <div className="hidden lg:flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] text-xs shadow-2xs">
           <div className="w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[#0071E3] dark:text-[#38BDF8] flex items-center justify-center shrink-0">
             <Wallet className="w-3.5 h-3.5" />
           </div>
@@ -118,14 +142,14 @@ export const TopBar: React.FC<TopBarProps> = ({
           </span>
           <span className="text-slate-300 dark:text-slate-700">•</span>
           <span className={`font-semibold ${isDeficit ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-            {isDeficit ? 'Alerte Masse Salariale' : 'Couverture Salaires OK'}
+            {isDeficit ? 'Alerte Masse Salariale' : 'Salaires OK'}
           </span>
         </div>
 
         {/* WhatsApp Relance Action Button */}
         <button
           onClick={onQuickWhatsAppRelance}
-          className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-2xs hover:shadow-xs transition-all shrink-0"
+          className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-2xs hover:shadow-xs transition-all shrink-0 cursor-pointer"
           title="Relancer les parents en retard de paiement via WhatsApp (+242)"
         >
           <MessageCircle className="w-4 h-4 shrink-0 fill-current" />

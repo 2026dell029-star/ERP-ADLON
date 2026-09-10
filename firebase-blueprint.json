@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "student": {
+      "title": "Student",
+      "description": "Dossier scolaire et financier d'un élève",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "matricule": { "type": "string", "maxLength": 64 },
+        "firstName": { "type": "string", "maxLength": 100 },
+        "lastName": { "type": "string", "maxLength": 100 },
+        "cycle": { "type": "string", "enum": ["Préscolaire", "Primaire", "Collège", "Lycée"] },
+        "classLevel": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["solde", "partiel", "impaye"] },
+        "totalDue": { "type": "number" },
+        "totalPaid": { "type": "number" },
+        "balanceRemaining": { "type": "number" },
+        "parentName": { "type": "string", "maxLength": 150 },
+        "parentPhone": { "type": "string", "maxLength": 30 }
+      },
+      "required": ["id", "matricule", "firstName", "lastName", "cycle", "classLevel"]
+    },
+    "staff": {
+      "title": "StaffMember",
+      "description": "Membre du personnel administratif ou enseignant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "enum": ["Directeur", "Comptable", "Enseignant", "Surveillant Général", "Secrétaire"] },
+        "monthlySalary": { "type": "number" },
+        "phone": { "type": "string", "maxLength": 30 }
+      },
+      "required": ["id", "name", "role"]
+    },
+    "schoolConfig": {
+      "title": "SchoolConfig",
+      "description": "Configuration globale de l'établissement scolaire",
+      "type": "object",
+      "properties": {
+        "schoolName": { "type": "string", "maxLength": 200 },
+        "schoolCity": { "type": "string", "maxLength": 100 },
+        "directorName": { "type": "string", "maxLength": 150 },
+        "academicYear": { "type": "string", "maxLength": 50 },
+        "currency": { "type": "string", "maxLength": 20 },
+        "countryCode": { "type": "string", "maxLength": 10 }
+      },
+      "required": ["academicYear", "currency", "countryCode"]
+    },
+    "auditLog": {
+      "title": "AuditLog",
+      "description": "Journal d'audit des actions administratives",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string", "maxLength": 64 },
+        "user": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "maxLength": 100 },
+        "action": { "type": "string", "maxLength": 500 },
+        "category": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "timestamp", "user", "action"]
+    }
+  },
+  "firestore": {
+    "/settings/{docId}": {
+      "schema": "schoolConfig",
+      "description": "Paramètres et tarifs scolaires de l'ERP"
+    },
+    "/students/{studentId}": {
+      "schema": "student",
+      "description": "Registre des élèves et suivi des paiements"
+    },
+    "/staff/{staffId}": {
+      "schema": "staff",
+      "description": "Registre du personnel et masse salariale"
+    },
+    "/auditLogs/{logId}": {
+      "schema": "auditLog",
+      "description": "Historique sécurisé des opérations de pilotage"
+    }
+  }
+}

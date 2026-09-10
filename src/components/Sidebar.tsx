@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigationTab, SchoolConfig } from '../types';
+import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
   UserPlus,
@@ -12,7 +13,11 @@ import {
   X,
   School,
   Sun,
-  Moon
+  Moon,
+  Flame,
+  LogIn,
+  LogOut,
+  ShieldCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,6 +29,7 @@ interface SidebarProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   config?: SchoolConfig;
+  onOpenAuthModal?: () => void;
 }
 
 interface NavItem {
@@ -42,7 +48,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   theme,
   onToggleTheme,
   config,
+  onOpenAuthModal,
 }) => {
+  const { user } = useAuth();
   const navItems: NavItem[] = [
     {
       id: 'dashboard',
@@ -206,40 +214,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </span>
           </button>
 
-          {/* Active telemetry signal */}
-          <div className="px-3.5 py-2 rounded-2xl bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] flex items-center justify-between text-xs shadow-2xs">
+          {/* Active telemetry signal & Firebase Status */}
+          <div className="px-3 py-1.5 rounded-2xl bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] flex items-center justify-between text-xs shadow-2xs">
             <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#34C759] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#34C759]"></span>
-              </span>
-              <span className="text-[12px] font-semibold text-[#0F172A] dark:text-[#F8FAFC]">Système Connecté</span>
+              <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[11px] font-bold text-[#0F172A] dark:text-[#F8FAFC]">Firestore</span>
+                <span className="text-[9px] text-[#64748B] dark:text-[#94A3B8] font-mono">erp-adlon</span>
+              </div>
             </div>
-            <span className="font-mono text-[11px] text-[#64748B] dark:text-[#94A3B8] font-semibold">
-              {activeUsersCount} actifs
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              En direct
             </span>
           </div>
 
-          {/* User Account */}
-          <div className="px-3 py-1.5 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#0F172A] dark:bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">
-              {(config?.directorName ? config.directorName.replace(/^M\.\s*|^Mme\s*|^Dr\s*/i, '') : 'Gaston Bantsimba')
-                .split(' ')
-                .map((p) => p[0])
-                .filter(Boolean)
-                .slice(0, 2)
-                .join('')
-                .toUpperCase() || 'DG'}
-            </div>
-            <div className="overflow-hidden">
-              <div className="text-[13px] font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
-                {config?.directorName || 'M. Gaston Bantsimba'}
+          {/* User Account / Auth trigger */}
+          {user ? (
+            <button
+              onClick={onOpenAuthModal}
+              className="w-full text-left px-3 py-2 rounded-2xl border border-slate-200/80 dark:border-[#222F46] bg-white dark:bg-[#151D2E] hover:bg-slate-50 dark:hover:bg-[#1E293B] flex items-center gap-3 transition-colors cursor-pointer group"
+              title="Gérer le compte Firebase"
+            >
+              <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden shadow-2xs">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  (user.displayName || user.email || 'A').charAt(0).toUpperCase()
+                )}
               </div>
-              <div className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                Direction Générale
+              <div className="overflow-hidden flex-1 min-w-0">
+                <div className="text-[13px] font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate group-hover:text-blue-500 transition-colors">
+                  {user.displayName || 'Administrateur'}
+                </div>
+                <div className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate font-mono">
+                  {user.email}
+                </div>
               </div>
-            </div>
-          </div>
+              <LogOut className="w-4 h-4 text-slate-400 group-hover:text-rose-500 shrink-0" />
+            </button>
+          ) : (
+            <button
+              onClick={onOpenAuthModal}
+              className="w-full px-3 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white flex items-center justify-center gap-2 text-xs font-semibold transition-all shadow-sm cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Connexion (Email / Google)</span>
+            </button>
+          )}
         </div>
       </aside>
     </>
