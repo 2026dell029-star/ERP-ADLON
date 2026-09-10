@@ -83,6 +83,17 @@ const STANDARD_CURRICULUM_TEMPLATES: Record<StudentCycle, { name: string; coeffi
 export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) => {
   const [formData, setFormData] = useState<SchoolConfig>(() => ({
     ...config,
+    schoolName: config.schoolName || 'Complexe Scolaire Privé ADLON',
+    schoolMotto: config.schoolMotto || '« Rigueur - Discipline - Excellence »',
+    schoolAddress: config.schoolAddress || 'Bacongo, Brazzaville',
+    schoolCity: config.schoolCity || 'Brazzaville',
+    schoolCountry: config.schoolCountry || 'République du Congo',
+    schoolDepartment: config.schoolDepartment || 'Direction Départementale de Brazzaville',
+    schoolPhone: config.schoolPhone || '+242 06 611 22 33 / 05 544 33 22',
+    schoolEmail: config.schoolEmail || 'direction@adlon-school.cg',
+    directorName: config.directorName || 'M. Gaston Bantsimba',
+    ministerialApproval: config.ministerialApproval || 'Agrément Ministériel N° 2024/MEP-DGEP/CAB',
+    academicYear: config.academicYear || '2026-2027',
     classes: config.classes || [
       { id: 'cls-1', name: 'Petite Section (PS)', cycle: 'Préscolaire', monthlyTuition: 15000, mainTeacher: 'Mme Brigitte Bouesso', roomNumber: 'M01', maxCapacity: 20 },
       { id: 'cls-2', name: 'CE2', cycle: 'Primaire', monthlyTuition: 18000, mainTeacher: 'Mme Brigitte Bouesso', roomNumber: 'P04', maxCapacity: 30 },
@@ -91,6 +102,24 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
     ],
     classSubjects: config.classSubjects || {}
   }));
+
+  React.useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      ...config,
+      schoolName: config.schoolName || prev.schoolName,
+      schoolMotto: config.schoolMotto || prev.schoolMotto,
+      schoolAddress: config.schoolAddress || prev.schoolAddress,
+      schoolCity: config.schoolCity || prev.schoolCity,
+      schoolCountry: config.schoolCountry || prev.schoolCountry,
+      schoolDepartment: config.schoolDepartment || prev.schoolDepartment,
+      schoolPhone: config.schoolPhone || prev.schoolPhone,
+      schoolEmail: config.schoolEmail || prev.schoolEmail,
+      directorName: config.directorName || prev.directorName,
+      ministerialApproval: config.ministerialApproval || prev.ministerialApproval,
+      academicYear: config.academicYear || prev.academicYear,
+    }));
+  }, [config]);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<'structure' | 'general' | 'tuition'>('tuition');
@@ -1326,67 +1355,167 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
         {/* TAB 3: INFORMATIONS GÉNÉRALES ÉCOLE & CONTACT                            */}
         {/* ========================================================================= */}
         {activeTab === 'general' && (
-          <div className="p-6 bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] shadow-sm space-y-5 animate-in fade-in duration-200">
-            <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] border-b border-slate-200/80 dark:border-[#222F46] pb-3 flex items-center gap-2">
-              <School className="w-4 h-4 text-[#0071E3]" />
-              <span>Identité de l'Établissement & Coordonnées</span>
-            </h3>
+          <div className="p-6 bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] shadow-sm space-y-6 animate-in fade-in duration-200">
+            <div>
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] pb-1 flex items-center gap-2">
+                <School className="w-4 h-4 text-[#0071E3]" />
+                <span>Identité Officielle de l'Établissement</span>
+              </h3>
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                Ces informations sont automatiquement appliquées sur tous les bulletins de notes, reçus de scolarité, certificats d'inscription, messages WhatsApp et en-têtes officiels.
+              </p>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">Nom de l'Établissement :</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+              <div className="sm:col-span-2">
+                <label className="block font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
+                  Nom de l'Établissement Scolaire :
+                </label>
                 <input
                   type="text"
-                  value={formData.schoolName}
+                  value={formData.schoolName || ''}
                   onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
-                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  placeholder="ex: Complexe Scolaire Privé ADLON"
+                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-bold text-sm text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">Année Scolaire en cours :</label>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Devise / Slogan :
+                </label>
                 <input
                   type="text"
-                  value={formData.currentSchoolYear}
-                  onChange={(e) => setFormData({ ...formData, currentSchoolYear: e.target.value })}
+                  value={formData.schoolMotto || ''}
+                  onChange={(e) => setFormData({ ...formData, schoolMotto: e.target.value })}
+                  placeholder="ex: « Rigueur - Discipline - Excellence »"
+                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Année Scolaire en cours :
+                </label>
+                <input
+                  type="text"
+                  value={formData.academicYear || ''}
+                  onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
+                  placeholder="ex: 2026-2027"
                   className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-mono font-bold text-[#0071E3] dark:text-[#38BDF8] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">Téléphone Principal (Standard) :</label>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Ville :
+                </label>
                 <input
                   type="text"
-                  value={formData.schoolPhone}
-                  onChange={(e) => setFormData({ ...formData, schoolPhone: e.target.value })}
+                  value={formData.schoolCity || ''}
+                  onChange={(e) => setFormData({ ...formData, schoolCity: e.target.value })}
+                  placeholder="ex: Brazzaville"
                   className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">Email Officiel :</label>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Pays :
+                </label>
                 <input
-                  type="email"
-                  value={formData.schoolEmail}
-                  onChange={(e) => setFormData({ ...formData, schoolEmail: e.target.value })}
+                  type="text"
+                  value={formData.schoolCountry || ''}
+                  onChange={(e) => setFormData({ ...formData, schoolCountry: e.target.value })}
+                  placeholder="ex: République du Congo"
                   className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">Adresse Physique :</label>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Direction Départementale / Académie :
+                </label>
                 <input
                   type="text"
-                  value={formData.schoolAddress}
-                  onChange={(e) => setFormData({ ...formData, schoolAddress: e.target.value })}
+                  value={formData.schoolDepartment || ''}
+                  onChange={(e) => setFormData({ ...formData, schoolDepartment: e.target.value })}
+                  placeholder="ex: Direction Départementale de Brazzaville"
                   className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">Durée Standard :</label>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Chef d'Établissement / Directeur :
+                </label>
+                <input
+                  type="text"
+                  value={formData.directorName || ''}
+                  onChange={(e) => setFormData({ ...formData, directorName: e.target.value })}
+                  placeholder="ex: M. Gaston Bantsimba"
+                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Agrément Ministériel :
+                </label>
+                <input
+                  type="text"
+                  value={formData.ministerialApproval || ''}
+                  onChange={(e) => setFormData({ ...formData, ministerialApproval: e.target.value })}
+                  placeholder="ex: Agrément Ministériel N° 2024/MEP-DGEP/CAB"
+                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Téléphone Principal :
+                </label>
+                <input
+                  type="text"
+                  value={formData.schoolPhone || ''}
+                  onChange={(e) => setFormData({ ...formData, schoolPhone: e.target.value })}
+                  placeholder="ex: +242 06 611 22 33 / 05 544 33 22"
+                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Email Officiel :
+                </label>
+                <input
+                  type="email"
+                  value={formData.schoolEmail || ''}
+                  onChange={(e) => setFormData({ ...formData, schoolEmail: e.target.value })}
+                  placeholder="ex: direction@adlon-school.cg"
+                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                />
+              </div>
+
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Adresse Physique Complète :
+                </label>
+                <input
+                  type="text"
+                  value={formData.schoolAddress || ''}
+                  onChange={(e) => setFormData({ ...formData, schoolAddress: e.target.value })}
+                  placeholder="ex: Rue Mbaka, Bacongo, Brazzaville"
+                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Durée Standard de l'Année :
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -1400,7 +1529,9 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
               </div>
 
               <div>
-                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">Indicatif WhatsApp :</label>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Indicatif Téléphonique Pays :
+                </label>
                 <input
                   type="text"
                   value={formData.countryCode}
@@ -1409,6 +1540,20 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                   required
                 />
                 <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1 block font-medium">+242 pour Congo-Brazzaville</span>
+              </div>
+
+              <div>
+                <label className="block font-medium text-[#64748B] dark:text-[#94A3B8] mb-1.5">
+                  Devise Monétaire :
+                </label>
+                <input
+                  type="text"
+                  value={formData.currency}
+                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
+                  required
+                />
+                <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1 block font-medium">FCFA (Franc CFA XAF)</span>
               </div>
             </div>
           </div>

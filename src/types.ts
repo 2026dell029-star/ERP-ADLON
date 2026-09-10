@@ -153,6 +153,16 @@ export interface SubjectDefinition {
 }
 
 export interface SchoolConfig {
+  schoolName?: string; // Nom officiel de l'établissement
+  schoolMotto?: string; // Devise officielle de l'école
+  schoolAddress?: string; // Adresse physique
+  schoolCity?: string; // Ville
+  schoolCountry?: string; // Pays
+  schoolDepartment?: string; // Direction Départementale ou Académie
+  schoolPhone?: string; // Téléphone standard
+  schoolEmail?: string; // Email officiel
+  directorName?: string; // Nom du Chef d'Établissement / Directeur
+  ministerialApproval?: string; // N° d'Agrément ministériel
   academicYear: string;
   countryCode: string; // +242 for Congo
   currency: string; // FCFA

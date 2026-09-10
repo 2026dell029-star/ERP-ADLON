@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Student } from '../types';
+import { Student, SchoolConfig } from '../types';
 import { formatFCFA, buildWhatsAppLink, cleanPhoneNumber } from '../utils/formatters';
 import { MessageCircle, X, Send, Copy, Check } from 'lucide-react';
 
@@ -9,6 +9,7 @@ interface WhatsAppPreviewModalProps {
   defaultType?: 'relance' | 'convocation' | 'felicitations';
   onClose: () => void;
   onLoggedAction?: (msg: string) => void;
+  config?: SchoolConfig;
 }
 
 export const WhatsAppPreviewModal: React.FC<WhatsAppPreviewModalProps> = ({
@@ -17,21 +18,25 @@ export const WhatsAppPreviewModal: React.FC<WhatsAppPreviewModalProps> = ({
   defaultType = 'relance',
   onClose,
   onLoggedAction,
+  config,
 }) => {
   const [templateType, setTemplateType] = useState<'relance' | 'convocation' | 'felicitations'>(defaultType);
   const [copied, setCopied] = useState(false);
+
+  const schoolName = config?.schoolName || 'Complexe Scolaire Privé ADLON';
+  const academicYear = config?.academicYear || '2026-2027';
 
   // Generate message based on template
   const getInitialMessage = (type: 'relance' | 'convocation' | 'felicitations') => {
     switch (type) {
       case 'relance':
-        return `Bonjour ${student.parentName},\n\nNous vous contactons depuis l'administration de l'établissement scolaire concernant la scolarité de votre enfant ${student.firstName} ${student.lastName} (Classe de ${student.classLevel}).\n\nÀ ce jour, le montant restant dû au titre de l'année scolaire 2026-2027 s'élève à ${formatFCFA(student.balanceRemaining)}.\n\nNous vous prions de bien vouloir procéder à la régularisation auprès de notre service comptabilité ou par transfert Mobile Money (Airtel Money / MTN Mobile Money) avant le 30 de ce mois afin de garantir la continuité de son suivi pédagogique.\n\nMerci de votre collaboration,\nLa Direction - ERP ADLON`;
+        return `Bonjour ${student.parentName},\n\nNous vous contactons depuis l'administration de ${schoolName} concernant la scolarité de votre enfant ${student.firstName} ${student.lastName} (Classe de ${student.classLevel}).\n\nÀ ce jour, le montant restant dû au titre de l'année scolaire ${academicYear} s'élève à ${formatFCFA(student.balanceRemaining)}.\n\nNous vous prions de bien vouloir procéder à la régularisation auprès de notre service comptabilité ou par transfert Mobile Money (Airtel Money / MTN Mobile Money) avant le 30 de ce mois afin de garantir la continuité de son suivi pédagogique.\n\nMerci de votre collaboration,\nLa Direction - ${schoolName}`;
       
       case 'convocation':
-        return `Bonjour ${student.parentName},\n\nL'équipe de direction de l'établissement scolaire souhaite échanger avec vous concernant l'assiduité et le cadre éducatif de ${student.firstName} (Classe de ${student.classLevel}).\n\nNos registres indiquent une absence remarquée aux ${student.parentMeetingAbsences} dernières rencontres parents-enseignants. La réussite scolaire reposant sur une étroite collaboration famille-école, nous vous prions de bien vouloir convenir d'un rendez-vous avec le Directeur ou le professeur principal.\n\nCordialement,\nService Vie Scolaire & Direction`;
+        return `Bonjour ${student.parentName},\n\nL'équipe de direction de ${schoolName} souhaite échanger avec vous concernant l'assiduité et le cadre éducatif de ${student.firstName} (Classe de ${student.classLevel}).\n\nNos registres indiquent une absence remarquée aux ${student.parentMeetingAbsences} dernières rencontres parents-enseignants. La réussite scolaire reposant sur une étroite collaboration famille-école, nous vous prions de bien vouloir convenir d'un rendez-vous avec le Directeur ou le professeur principal.\n\nCordialement,\nService Vie Scolaire & Direction - ${schoolName}`;
 
       case 'felicitations':
-        return `Excellente nouvelle pour la famille de ${student.firstName} ${student.lastName} !\n\nNous avons l'honneur de vous féliciter pour les remarquables résultats académiques de votre enfant au conseil de classe (Moyenne : ${student.gpa}/20 - Classé(e) ${student.classRank}e sur ${student.totalStudentsInClass} élèves en ${student.classLevel}).\n\nL'établissement salue son engagement ainsi que votre accompagnement exemplaire !\n\nBien cordialement,\nLa Direction Pédagogique`;
+        return `Excellente nouvelle pour la famille de ${student.firstName} ${student.lastName} !\n\nNous avons l'honneur de vous féliciter au nom de ${schoolName} pour les remarquables résultats académiques de votre enfant au conseil de classe (Moyenne : ${student.gpa}/20 - Classé(e) ${student.classRank}e sur ${student.totalStudentsInClass} élèves en ${student.classLevel}).\n\nL'établissement salue son engagement ainsi que votre accompagnement exemplaire !\n\nBien cordialement,\nLa Direction Pédagogique - ${schoolName}`;
     }
   };
 

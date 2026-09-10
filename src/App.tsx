@@ -314,6 +314,7 @@ export default function App() {
         onClose={() => setIsMobileMenuOpen(false)}
         theme={theme}
         onToggleTheme={toggleTheme}
+        config={config}
       />
 
       {/* 2. MAIN APPLICATION CONTENT AREA */}
@@ -426,12 +427,12 @@ export default function App() {
         <footer className="no-print border-t border-[#E2E8F0] dark:border-[#1E293B] bg-white dark:bg-[#111827] py-4 px-6 text-xs text-[#64748B] dark:text-[#94A3B8]">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>
-              <strong className="text-[#1D1D1F] dark:text-[#F8FAFC] font-semibold">ERP ADLON</strong> • Système Intégré de Pilotage Éducatif 2026-2027
+              <strong className="text-[#1D1D1F] dark:text-[#F8FAFC] font-semibold">{config.schoolName || 'ERP ADLON'}</strong> • {config.schoolCity || 'Brazzaville'} • Année {config.academicYear || '2026-2027'}
             </span>
             <div className="flex items-center gap-4 text-[#64748B] dark:text-[#94A3B8]">
-              <span>Devise : FCFA (XAF)</span>
+              <span>Devise : {config.currency || 'FCFA'}</span>
               <span>•</span>
-              <span>Indicatif : +242 (Congo)</span>
+              <span>Indicatif : {config.countryCode || '+242'} ({config.schoolCountry || 'Congo'})</span>
               <span>•</span>
               <span className="text-[#34C759] font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]"></span>
@@ -448,6 +449,7 @@ export default function App() {
           student={whatsAppModalData.student}
           countryCode={config.countryCode}
           defaultType={whatsAppModalData.defaultType}
+          config={config}
           onClose={() => setWhatsAppModalData(null)}
           onLoggedAction={(msg) =>
             addAuditLog('Agent CRM', 'Direction', msg, 'CRM WhatsApp')
@@ -458,6 +460,7 @@ export default function App() {
       {paymentModalStudent && (
         <PaymentModal
           student={paymentModalStudent}
+          config={config}
           onClose={() => setPaymentModalStudent(null)}
           onRecordPayment={handleRecordPayment}
         />
@@ -499,6 +502,7 @@ export default function App() {
         <ReportCardModal
           student={reportCardStudent}
           allStudents={students}
+          config={config}
           onClose={() => setReportCardStudent(null)}
           onSelectStudent={(st) => setReportCardStudent(st)}
         />

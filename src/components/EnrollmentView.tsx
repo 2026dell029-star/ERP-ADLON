@@ -1111,13 +1111,14 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
             {/* Header officiel République du Congo */}
             <div className="text-center space-y-1 pb-4 border-b-2 border-black">
               <div className="text-[10px] uppercase font-bold tracking-widest text-[#64748B]">
-                République du Congo • Ministère de l'Enseignement
+                {config?.schoolCountry || 'République du Congo'} • {config?.schoolDepartment || 'Ministère de l\'Enseignement'}
               </div>
               <div className="text-xl font-extrabold tracking-tight">
-                GROUPE SCOLAIRE ADLON
+                {config?.schoolName || 'Complexe Scolaire Privé ADLON'}
               </div>
               <div className="text-xs text-[#64748B]">
-                Brazzaville, Congo • Année Académique 2026-2027
+                {config?.schoolCity || 'Brazzaville'}, {config?.schoolCountry || 'Congo'} • Année Académique {config?.academicYear || '2026-2027'}
+                {config?.schoolPhone ? ` • Tél: ${config.schoolPhone}` : ''}
               </div>
             </div>
 
@@ -1129,7 +1130,7 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
 
             <div className="space-y-3 text-xs leading-relaxed">
               <p>
-                Le Chef d'Établissement du Groupe Scolaire ADLON certifie par la présente que l'élève :
+                Le Chef d'Établissement de <strong>{config?.schoolName || 'l\'Établissement Scolaire'}</strong> certifie par la présente que l'élève :
               </p>
               
               <div className="p-4 rounded-xl bg-[#F4F5F7] border border-[#E2E8F0] space-y-2">
@@ -1157,7 +1158,7 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#64748B]">Responsable légal :</span>
-                  <span className="font-medium text-black">{attestationStudent.parentName} (+242 {attestationStudent.parentPhone})</span>
+                  <span className="font-medium text-black">{attestationStudent.parentName} (+{config?.countryCode ? config.countryCode.replace('+', '') : '242'} {attestationStudent.parentPhone})</span>
                 </div>
               </div>
 
@@ -1176,14 +1177,14 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
             {/* Signature & Cachet */}
             <div className="pt-6 flex justify-between items-end text-xs">
               <div>
-                <p className="text-[10px] text-[#64748B]">Fait à Brazzaville, le {new Date().toLocaleDateString('fr-FR')}</p>
+                <p className="text-[10px] text-[#64748B]">Fait à {config?.schoolCity || 'Brazzaville'}, le {new Date().toLocaleDateString('fr-FR')}</p>
                 <div className="mt-8 font-bold">Le Secrétariat des Admissions</div>
               </div>
               <div className="text-right">
                 <div className="w-24 h-24 border-2 border-dashed border-black/30 rounded-full flex items-center justify-center text-[9px] uppercase font-bold text-black/40 rotate-[-12deg]">
                   Cachet Établissement
                 </div>
-                <div className="mt-2 font-bold">M. Gaston Bantsimba</div>
+                <div className="mt-2 font-bold">{config?.directorName || 'M. Gaston Bantsimba'}</div>
                 <div className="text-[10px] text-[#64748B]">Directeur Général</div>
               </div>
             </div>

@@ -584,6 +584,7 @@ export const GradesView: React.FC<GradesViewProps> = ({
           student={activeReportStudent}
           allStudents={students}
           initialTerm={selectedTerm}
+          config={config}
           onClose={() => setActiveReportStudent(null)}
           onSelectStudent={(st) => setActiveReportStudent(st)}
         />

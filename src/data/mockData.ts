@@ -1,6 +1,16 @@
 import { SchoolConfig, Student, StaffMember, UserStats } from '../types';
 
 export const initialConfig: SchoolConfig = {
+  schoolName: 'Complexe Scolaire Privé ADLON',
+  schoolMotto: '« Rigueur - Discipline - Excellence »',
+  schoolAddress: 'Bacongo, Brazzaville',
+  schoolCity: 'Brazzaville',
+  schoolCountry: 'République du Congo',
+  schoolDepartment: 'Direction Départementale de Brazzaville',
+  schoolPhone: '+242 06 611 22 33 / 05 544 33 22',
+  schoolEmail: 'direction@adlon-school.cg',
+  directorName: 'M. Gaston Bantsimba',
+  ministerialApproval: 'Agrément Ministériel N° 2024/MEP-DGEP/CAB',
   academicYear: '2026-2027',
   countryCode: '+242',
   currency: 'FCFA',

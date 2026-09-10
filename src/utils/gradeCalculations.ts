@@ -253,14 +253,21 @@ export function computeStudentReport(
 }
 
 // Generate preformatted WhatsApp text to notify parent about the report card
-export function generateWhatsAppReportText(report: StudentTermReport, student: Student): string {
+export function generateWhatsAppReportText(
+  report: StudentTermReport, 
+  student: Student, 
+  config?: SchoolConfig
+): string {
   const rankStr = formatRank(report.classRank);
-  return `📢 *COMPLEXE SCOLAIRE ADLON - BULLETIN OFFICIEL*
+  const schoolName = config?.schoolName || 'Complexe Scolaire Privé ADLON';
+  const schoolYear = config?.academicYear || '2026-2027';
+  const city = config?.schoolCity || 'Brazzaville';
+  return `📢 *${schoolName.toUpperCase()} - BULLETIN OFFICIEL*
 ━━━━━━━━━━━━━━━━━━━━
 🎓 *Élève :* ${student.firstName} ${student.lastName}
 🏷️ *Matricule :* ${student.matricule}
 🏫 *Classe :* ${student.classLevel} (${student.cycle})
-📅 *Période :* ${report.term} • Année 2026-2027
+📅 *Période :* ${report.term} • Année ${schoolYear}
 ━━━━━━━━━━━━━━━━━━━━
 📊 *RÉSULTATS ACADÉMIQUES :*
 • *Moyenne Générale :* *${report.generalAverage} / 20*
@@ -276,5 +283,5 @@ export function generateWhatsAppReportText(report: StudentTermReport, student: S
 💬 *Observation de la Direction :*
 "${report.academicRemarks}"
 
-_Ce bulletin est certifié conforme par la Direction Pédagogique du Complexe Scolaire ADLON (Brazzaville)._`;
+_Ce bulletin est certifié conforme par la Direction Pédagogique de ${schoolName} (${city})._`;
 }

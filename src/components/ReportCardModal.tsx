@@ -66,8 +66,8 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
 
   // WhatsApp share
   const handleShareWhatsApp = () => {
-    const text = generateWhatsAppReportText(report, student);
-    const cleaned = cleanPhoneNumber(student.parentPhone, '+242');
+    const text = generateWhatsAppReportText(report, student, config);
+    const cleaned = cleanPhoneNumber(student.parentPhone, config?.countryCode || '+242');
     const url = `https://wa.me/${cleaned}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
@@ -75,6 +75,16 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
   const handlePrint = () => {
     window.print();
   };
+
+  const schoolName = config?.schoolName || 'Complexe Scolaire Privé ADLON';
+  const schoolMotto = config?.schoolMotto || '« Rigueur - Discipline - Excellence »';
+  const schoolCity = config?.schoolCity || 'Brazzaville';
+  const schoolCountry = config?.schoolCountry || 'République du Congo';
+  const schoolDepartment = config?.schoolDepartment || 'Direction Départementale de Brazzaville';
+  const schoolPhone = config?.schoolPhone || '+242 06 611 22 33 / 05 544 33 22';
+  const academicYear = config?.academicYear || '2026-2027';
+  const directorName = config?.directorName || 'M. Gaston Bantsimba';
+  const approval = config?.ministerialApproval || 'Agrément Ministériel N° 2024/MEP-DGEP/CAB';
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-start justify-center p-2 sm:p-4 md:p-6 print:p-0 print:bg-white print:static print:overflow-visible">
@@ -94,7 +104,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
                 Bulletin Trimestriel Officiel
               </h3>
               <p className="text-[10px] sm:text-xs text-[#64748B] dark:text-[#94A3B8]">
-                {student.firstName} {student.lastName} ({student.classLevel})
+                {student.firstName} {student.lastName} ({student.classLevel}) • {schoolName}
               </p>
             </div>
           </div>
@@ -177,11 +187,12 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
               {/* Left ministry block */}
               <div className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 print:text-black">
                 <p className="font-bold uppercase tracking-wider text-slate-900 dark:text-white print:text-black">
-                  République du Congo
+                  {schoolCountry}
                 </p>
                 <p className="italic text-[10px]">Unité - Travail - Progrès</p>
                 <p className="mt-0.5 text-[10px]">Ministère de l'Enseignement Primaire, Secondaire et de l'Alphabétisation</p>
-                <p className="text-[10px] font-medium">Direction Départementale de Brazzaville</p>
+                <p className="text-[10px] font-medium">{schoolDepartment}</p>
+                {approval && <p className="text-[9px] text-slate-500 print:text-black">{approval}</p>}
               </div>
 
               {/* Center school emblem & title */}
@@ -190,13 +201,13 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
                   <Building2 className="w-6 h-6" />
                 </div>
                 <h1 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white print:text-black">
-                  Complexe Scolaire Privé ADLON
+                  {schoolName}
                 </h1>
                 <p className="text-[10px] font-semibold text-[#0071E3] dark:text-[#38BDF8] print:text-black italic">
-                  « Rigueur - Discipline - Excellence »
+                  {schoolMotto}
                 </p>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 print:text-black">
-                  Brazzaville • Tél: +242 06 611 22 33 / 05 544 33 22
+                  {schoolCity} • Tél: {schoolPhone}
                 </p>
               </div>
 
@@ -204,7 +215,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
               <div className="text-center md:text-right print:text-right text-[11px]">
                 <div className="inline-block p-2 rounded-xl bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#222F46] print:border-black print:bg-white text-left">
                   <p className="font-semibold text-[10px] text-slate-500 dark:text-slate-400 print:text-black">ANNÉE SCOLAIRE :</p>
-                  <p className="font-mono font-bold text-xs">2026 - 2027</p>
+                  <p className="font-mono font-bold text-xs">{academicYear}</p>
                   <p className="font-semibold text-[10px] text-slate-500 dark:text-slate-400 print:text-black mt-1">PÉRIODE :</p>
                   <p className="font-bold text-xs text-[#0071E3] dark:text-[#38BDF8] print:text-black uppercase">
                     {selectedTerm}
@@ -465,7 +476,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
                     Le Chef d'Établissement
                   </span>
                   <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 print:text-black mt-0.5">
-                    M. Gaston Bantsimba
+                    {directorName}
                   </p>
                 </div>
                 <span className="text-[9px] text-slate-400 print:text-slate-600 italic">Cachet & Signature</span>
@@ -474,7 +485,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
 
             {/* Footer stamp notice */}
             <div className="mt-3 text-center text-[10px] text-slate-500 dark:text-slate-400 print:text-black">
-              Complexe Scolaire Privé ADLON • Document officiel certifié conforme • Fait à Brazzaville le 09/09/2026
+              {schoolName} • Document officiel certifié conforme • Fait à {schoolCity} le {new Date().toLocaleDateString('fr-FR')}
             </div>
           </div>
         </div>

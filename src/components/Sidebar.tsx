@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationTab } from '../types';
+import { NavigationTab, SchoolConfig } from '../types';
 import { 
   LayoutDashboard, 
   UserPlus,
@@ -23,6 +23,7 @@ interface SidebarProps {
   activeUsersCount: number;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
+  config?: SchoolConfig;
 }
 
 interface NavItem {
@@ -40,6 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeUsersCount,
   theme,
   onToggleTheme,
+  config,
 }) => {
   const navItems: NavItem[] = [
     {
@@ -107,21 +109,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Top Header */}
           <div className="shrink-0 h-16 px-5 flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#1E293B]">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-[#0071E3] dark:bg-[#2563EB] flex items-center justify-center text-white shadow-xs">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="w-8 h-8 rounded-xl bg-[#0071E3] dark:bg-[#2563EB] shrink-0 flex items-center justify-center text-white shadow-xs">
                 <School className="w-4 h-4" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-[15px] tracking-tight text-[#1D1D1F] dark:text-[#F8FAFC]">
-                    ADLON
+                  <span className="font-bold text-[14px] tracking-tight text-[#1D1D1F] dark:text-[#F8FAFC] truncate max-w-[125px]" title={config?.schoolName || 'ERP ADLON'}>
+                    {config?.schoolName ? (config.schoolName.replace(/^Complexe\s+Scolaire\s+(Privé\s+)?/i, '') || config.schoolName) : 'ADLON'}
                   </span>
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#F4F5F7] dark:bg-[#1E293B] text-[#64748B] dark:text-[#94A3B8]">
+                  <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[#F4F5F7] dark:bg-[#1E293B] text-[#64748B] dark:text-[#94A3B8] shrink-0">
                     ERP
                   </span>
                 </div>
-                <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] leading-none">
-                  2026-2027 • Congo
+                <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] leading-none truncate mt-0.5">
+                  {config?.academicYear || '2026-2027'} • {config?.schoolCity || 'Congo'}
                 </p>
               </div>
             </div>
@@ -221,14 +223,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* User Account */}
           <div className="px-3 py-1.5 flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[#0F172A] dark:bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">
-              GB
+              {(config?.directorName ? config.directorName.replace(/^M\.\s*|^Mme\s*|^Dr\s*/i, '') : 'Gaston Bantsimba')
+                .split(' ')
+                .map((p) => p[0])
+                .filter(Boolean)
+                .slice(0, 2)
+                .join('')
+                .toUpperCase() || 'DG'}
             </div>
             <div className="overflow-hidden">
               <div className="text-[13px] font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
-                Gaston Bantsimba
+                {config?.directorName || 'M. Gaston Bantsimba'}
               </div>
               <div className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                Directeur Général
+                Direction Générale
               </div>
             </div>
           </div>
