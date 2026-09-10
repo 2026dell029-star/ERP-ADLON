@@ -33,20 +33,32 @@ export default function App() {
     return (saved === 'dark' || saved === 'light') ? saved : 'dark';
   });
 
-  // State management with localStorage fallback
+  // State management with safe localStorage fallback
   const [config, setConfig] = useState<SchoolConfig>(() => {
-    const saved = localStorage.getItem('adlon_config');
-    return saved ? JSON.parse(saved) : initialConfig;
+    try {
+      const saved = localStorage.getItem('adlon_config');
+      return saved ? JSON.parse(saved) : initialConfig;
+    } catch {
+      return initialConfig;
+    }
   });
 
   const [students, setStudents] = useState<Student[]>(() => {
-    const saved = localStorage.getItem('adlon_students');
-    return saved ? JSON.parse(saved) : initialStudents;
+    try {
+      const saved = localStorage.getItem('adlon_students');
+      return saved ? JSON.parse(saved) : initialStudents;
+    } catch {
+      return initialStudents;
+    }
   });
 
   const [staff, setStaff] = useState<StaffMember[]>(() => {
-    const saved = localStorage.getItem('adlon_staff');
-    return saved ? JSON.parse(saved) : initialStaff;
+    try {
+      const saved = localStorage.getItem('adlon_staff');
+      return saved ? JSON.parse(saved) : initialStaff;
+    } catch {
+      return initialStaff;
+    }
   });
 
   const [userStats, setUserStats] = useState<UserStats>(initialUserStats);
