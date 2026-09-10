@@ -37,7 +37,7 @@ export default function App() {
   const [config, setConfig] = useState<SchoolConfig>(() => {
     try {
       const saved = localStorage.getItem('adlon_config');
-      return saved ? JSON.parse(saved) : initialConfig;
+      return saved ? { ...initialConfig, ...JSON.parse(saved) } : initialConfig;
     } catch {
       return initialConfig;
     }
