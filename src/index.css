@@ -1,0 +1,287 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --erp-bg: #f8fafc;
+    --erp-card: #ffffff;
+    --erp-text: #0f172a;
+    --erp-muted: #64748b;
+    --erp-border: #e2e8f0;
+    --erp-primary: #0071e3;
+    --erp-success: #34c759;
+    --erp-danger: #ff3b30;
+  }
+
+  .dark {
+    --erp-bg: #0b0f19;
+    --erp-card: #151d2e;
+    --erp-text: #f8fafc;
+    --erp-muted: #94a3b8;
+    --erp-border: #222f46;
+    --erp-primary: #2563eb;
+    --erp-success: #22c55e;
+    --erp-danger: #ef4444;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    letter-spacing: -0.022em;
+    font-weight: 600;
+  }
+}
+
+/* ==========================================================================
+   POLICE INTER ABSOLUE : LETTRES ET CHIFFRES SANS DISTINCTION
+   Garantit que 100% des éléments utilisent la police Inter choisie par l'utilisateur
+   ========================================================================== */
+*, *::before, *::after,
+html, body, input, button, select, textarea,
+h1, h2, h3, h4, h5, h6, p, span, div, a,
+table, th, td, tr, thead, tbody, label, code, pre, kbd, samp,
+.font-mono, [class*="font-mono"] {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* Chiffres avec Inter : alignement tabulaire comptable fluide sans changer de police */
+.font-mono, [class*="font-mono"], .tabular-nums, td, th {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Utilitaires de défilement fluide et tactile pour mobile & tablette */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (max-width: 768px) {
+  /* Évite le zoom intempestif sur iOS Safari */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 14px !important;
+  }
+}
+
+/* ==========================================================================
+   LIGHT MODE: MODERN SKEUOMORPHISM & SOFT UI (Neumorphisme léger)
+   Fond grisé #F8FAFC avec cartes blanches, relief tactile & ombres douces
+   ========================================================================== */
+html:not(.dark) body,
+:root:not(.dark) body {
+  background-color: #f8fafc !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Soft UI Cards: Crisp white on #F8FAFC with multi-layered soft shadows and top-light inset */
+html:not(.dark) .bg-white,
+:root:not(.dark) .bg-white {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 
+    0 1px 3px 0 rgba(15, 23, 42, 0.03),
+    0 8px 24px -4px rgba(15, 23, 42, 0.05),
+    0 0 0 1px rgba(226, 232, 240, 0.7),
+    inset 0 1px 0 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Secondary Panels & Container Wells (#F1F5F9) */
+html:not(.dark) .bg-\[\#F5F5F7\],
+html:not(.dark) .bg-\[\#FAFAFC\],
+html:not(.dark) .bg-\[\#F4F5F7\],
+:root:not(.dark) .bg-\[\#F5F5F7\],
+:root:not(.dark) .bg-\[\#FAFAFC\],
+:root:not(.dark) .bg-\[\#F4F5F7\] {
+  background-color: #f1f5f9 !important;
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Sidebar with subtle tactile separation in light mode */
+html:not(.dark) aside,
+:root:not(.dark) aside {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+  box-shadow: 1px 0 10px 0 rgba(15, 23, 42, 0.03) !important;
+}
+
+/* Header / TopBar: Subtle Glassmorphism */
+html:not(.dark) header,
+:root:not(.dark) header {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+/* Inputs, Selects & Textareas: tactile soft bevel */
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) select,
+html:not(.dark) textarea,
+:root:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+:root:not(.dark) select,
+:root:not(.dark) textarea {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
+}
+
+/* Table header in light mode */
+html:not(.dark) thead tr,
+:root:not(.dark) thead tr {
+  background-color: #f1f5f9 !important;
+  background: #f1f5f9 !important;
+}
+
+/* Table rows hover */
+html:not(.dark) tbody tr:hover,
+:root:not(.dark) tbody tr:hover {
+  background-color: #f8fafc !important;
+  background: #f8fafc !important;
+}
+
+/* Modals & Dialogs */
+html:not(.dark) .fixed .bg-white,
+:root:not(.dark) .fixed .bg-white {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(226, 232, 240, 0.8) !important;
+}
+
+/* ==========================================================================
+   DARK MODE OVERRIDES (Strictly flat colors, ZERO gradients for dark mode)
+   ========================================================================== */
+.dark,
+.dark body,
+.dark aside,
+.dark header,
+.dark footer,
+.dark main,
+.dark div,
+.dark button,
+.dark section,
+.dark nav,
+.dark span,
+.dark [class*="bg-gradient"],
+.dark [class*="from-"],
+.dark [class*="via-"],
+.dark [class*="to-"] {
+  background-image: none !important;
+}
+
+.dark body {
+  background-color: #0b0f19 !important;
+  background: #0b0f19 !important;
+  color: #f8fafc !important;
+}
+
+.dark aside {
+  background-color: #111827 !important;
+  background: #111827 !important;
+  border-color: #1e293b !important;
+}
+
+.dark header {
+  background-color: rgba(17, 24, 39, 0.9) !important;
+  background: rgba(17, 24, 39, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-color: #1e293b !important;
+}
+
+.dark footer {
+  background-color: #111827 !important;
+  background: #111827 !important;
+  border-color: #1e293b !important;
+}
+
+.dark .bg-white {
+  background-color: #151d2e !important;
+  background: #151d2e !important;
+}
+
+.dark .bg-\[\#F5F5F7\],
+.dark .bg-\[\#FAFAFC\],
+.dark .bg-\[\#F4F5F7\] {
+  background-color: #0f172a !important;
+  background: #0f172a !important;
+}
+
+.dark .text-\[\#1D1D1F\] {
+  color: #f8fafc !important;
+}
+
+.dark .text-\[\#86868B\],
+.dark .text-\[\#64748B\] {
+  color: #94a3b8 !important;
+}
+
+.dark .border-\[\#E5E5EA\],
+.dark .border-\[\#E2E8F0\] {
+  border-color: #222f46 !important;
+}
+
+.dark .divide-\[\#E5E5EA\],
+.dark .divide-\[\#E2E8F0\] {
+  border-color: #222f46 !important;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #26334d !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark .hover\:bg-\[\#F5F5F7\]:hover,
+.dark .hover\:bg-\[\#F4F5F7\]:hover {
+  background-color: #1e293b !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #94a3b840;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b880;
+}
+
+

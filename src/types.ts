@@ -1,0 +1,211 @@
+export type StudentStatus = 'solde' | 'partiel' | 'impaye';
+export type StudentCycle = 'Préscolaire' | 'Primaire' | 'Collège' | 'Lycée';
+export type ContractType = 'CDI' | 'CDD';
+export type PaymentMethod = 'Espèces' | 'Airtel Money' | 'MTN Mobile Money' | 'Virement';
+export type StaffRole = 'Directeur' | 'Comptable' | 'Enseignant' | 'Surveillant Général' | 'Secrétaire';
+export type PenaltyType = 'financiere' | 'disciplinaire' | 'retard';
+
+export interface PenaltyRecord {
+  id: string;
+  date: string;
+  type: PenaltyType;
+  amount: number; // Montant en FCFA (si pénalité financière ou majoration de retard)
+  pointsDeducted: number; // Points de conduite retirés (si sanction disciplinaire)
+  reason: string; // Motif de la pénalité (ex: Retard de paiement, Dégradation de matériel, Absences répétées)
+  recordedBy: string; // Responsable ayant émis la pénalité (ex: Surveillant Général, Comptabilité, Direction)
+  status: 'active' | 'annulee';
+  cancelledAt?: string;
+  cancelReason?: string;
+  cancelledBy?: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  date: string;
+  amount: number;
+  method: PaymentMethod;
+  receiptNumber: string;
+  cashierName: string;
+  note?: string;
+}
+
+export interface Student {
+  id: string;
+  matricule: string;
+  firstName: string;
+  lastName: string;
+  cycle: StudentCycle;
+  classLevel: string; // e.g. CE2, 6ème, 3ème, Tle S
+  isNewStudent: boolean;
+  hasCanteen: boolean;
+  enrollmentDate: string;
+  monthsEnrolled: number; // e.g. 10 or 8 if joined in Nov
+  annualTuitionFull: number; // e.g. 180 000
+  effectiveTuition: number; // after prorata temporis
+  registrationFee: number; // 25 000 (new) or 15 000 (old)
+  canteenTotal: number; // 20 000 * monthsEnrolled if enrolled
+  totalDue: number;
+  totalPaid: number;
+  balanceRemaining: number;
+  status: StudentStatus;
+  parentName: string;
+  parentPhone: string;
+  parentEmail?: string;
+  parentMeetingAttended: number;
+  parentMeetingTotal: number;
+  parentMeetingAbsences: number; // trigger alert if >= 2
+  // Pedagogy & Conduct
+  gpa: number; // /20
+  classRank: number;
+  totalStudentsInClass: number;
+  conductScore: number; // /20
+  disciplinePoints: number; // points deducted or recorded
+  unexcusedAbsences: number;
+  tardinessCount: number;
+  academicRemarks: string;
+  payments: PaymentRecord[];
+  // Penalties & Sanctions
+  penalties?: PenaltyRecord[];
+  penaltyTotalAmount?: number; // Total des pénalités financières actives
+  // Registration dossier details
+  gender?: 'M' | 'F';
+  birthDate?: string;
+  address?: string;
+  emergencyContact?: string;
+  documentsProvided?: {
+    birthCertificate: boolean;
+    lastReportCard: boolean;
+    photoId: boolean;
+    medicalCertificate: boolean;
+  };
+  registrationFeePaid?: boolean;
+  // Academic grades by term
+  termGrades?: Record<string, SubjectGrade[]>;
+}
+
+export interface SubjectGrade {
+  subjectId: string;
+  subjectName: string;
+  coefficient: number;
+  score: number; // Moyenne de la matière /20
+  homeworkScore?: number; // Note de devoir /20
+  compositionScore?: number; // Note de composition /20
+  teacherName?: string;
+  teacherRemark?: string;
+}
+
+export interface StudentTermReport {
+  studentId: string;
+  term: string; // 'Trimestre 1' | 'Trimestre 2' | 'Trimestre 3'
+  grades: SubjectGrade[];
+  totalPoints: number;
+  totalCoefficients: number;
+  generalAverage: number;
+  classRank: number;
+  totalStudents: number;
+  classAverage: number;
+  highestAverage: number;
+  lowestAverage: number;
+  conductScore: number;
+  unexcusedAbsences: number;
+  tardinessCount: number;
+  councilMention: string;
+  academicRemarks: string;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: StaffRole;
+  contractType: ContractType;
+  monthlySalary: number;
+  assignedGradeOrSubject: string;
+  phone: string;
+  hireDate: string;
+  status: 'Actif' | 'En congé';
+}
+
+export interface CyclePricing {
+  cycle: StudentCycle;
+  minTuition: number;
+  maxTuition: number;
+  defaultTuition: number;
+}
+
+export interface ClassDefinition {
+  id: string;
+  name: string; // e.g. "CE2", "3ème A", "Terminale D"
+  cycle: StudentCycle; // 'Préscolaire' | 'Primaire' | 'Collège' | 'Lycée'
+  mainTeacher?: string; // Enseignant titulaire
+  roomNumber?: string;
+  maxCapacity?: number;
+  description?: string;
+  monthlyTuition?: number; // Montant mensuel à payer en FCFA pour 1 mois (ex: 18 000 FCFA / mois)
+}
+
+export interface SubjectDefinition {
+  id: string;
+  classLevel: string; // matches ClassDefinition.name e.g. "CE2" (or specific class)
+  name: string; // e.g. "Mathématiques", "Sciences Physiques"
+  coefficient: number; // Coefficient déterminé par l'utilisateur
+  category?: 'Scientifique' | 'Littéraire' | 'Sport & Arts' | 'Vie Scolaire' | 'Autre';
+  defaultTeacher?: string;
+}
+
+export interface SchoolConfig {
+  academicYear: string;
+  countryCode: string; // +242 for Congo
+  currency: string; // FCFA
+  schoolDurationMonths: number; // 10
+  registrationFeeNew: number; // 25 000
+  registrationFeeOld: number; // 15 000
+  canteenMonthlyFee: number; // 20 000
+  parentAbsenceAlertThreshold: number; // 2
+  availableBankCash: number; // e.g. 420 000 FCFA
+  monthlyFixedPayroll: number; // e.g. 730 000 FCFA
+  pricingByCycle: CyclePricing[];
+  classes?: ClassDefinition[];
+  classSubjects?: Record<string, SubjectDefinition[]>; // mapping classLevel -> SubjectDefinition[]
+}
+
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  user: string;
+  role: string;
+  action: string;
+  category: 'Finance' | 'Pédagogie' | 'CRM WhatsApp' | 'Vie Scolaire' | 'Sécurité' | 'Configuration';
+  ip: string;
+  device: string;
+}
+
+export interface UserStats {
+  activeUsersNow: number;
+  dailyActiveUsers: number;
+  weeklyActiveUsers: number;
+  monthlyActiveUsers: number;
+  avgSessionMinutes: number;
+  systemAvailability: number; // 99.9%
+  roleBreakdown: {
+    role: string;
+    totalAccounts: number;
+    activeToday: number;
+    avgDailyTimeMin: number;
+    color: string;
+  }[];
+  hourlyActivity: {
+    hour: string;
+    trafficPct: number;
+    isPeak?: boolean;
+    label?: string;
+  }[];
+  moduleAdoption: {
+    module: string;
+    adoptionRate: number; // %
+    totalActionsWeek: number;
+    trend: string;
+  }[];
+  recentAuditLogs: AuditLog[];
+}
+
+export type NavigationTab = 'dashboard' | 'enrollment' | 'finance' | 'crm' | 'pedagogy' | 'grades' | 'staff' | 'config';
