@@ -13,6 +13,7 @@ import {
   ROLE_PERMISSIONS
 } from './types';
 import { initialConfig, initialStudents, initialStaff, initialUserStats } from './data/mockData';
+import { syncStudentsRanksAndCounts } from './utils/gradeCalculations';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { AuthView } from './components/AuthView';
@@ -47,30 +48,41 @@ import {
 } from './services/firestoreService';
 import { Flame, Building2, ShieldCheck, GraduationCap, Wallet } from 'lucide-react';
 
+const isMockStudent = (s: any) =>
+  !s ||
+  s.id === 'std-1' ||
+  s.id === 'std-2' ||
+  s.id === 'std-3' ||
+  s.id === 'std-4' ||
+  s.id === 'std-5' ||
+  s.firstName === 'Dieuveil' ||
+  s.firstName === 'Merdi' ||
+  s.firstName === 'Princilia' ||
+  s.firstName === 'Grâce' ||
+  s.firstName === 'Divine';
+
+const isMockStaff = (st: any) =>
+  !st ||
+  st.id === 'stf-1' ||
+  st.id === 'stf-2' ||
+  st.id === 'stf-3' ||
+  st.id === 'stf-4' ||
+  st.name === 'M. Aimé Loubaki' ||
+  st.name === 'M. Serge Ngoma' ||
+  st.name === 'Mme Brigitte Bouesso' ||
+  st.name === 'M. Paul Mavoungou';
+
 const DEFAULT_INITIAL_SCHOOLS: School[] = [
   {
-    id: 'school_adlon_brazza',
-    name: 'Complexe Scolaire ADLON',
-    code: 'ADLON-242',
+    id: 'school_default',
+    name: 'Mon Établissement Scolaire',
+    code: 'ECOLE-01',
     city: 'Brazzaville',
     country: 'Congo',
     currency: 'FCFA',
     academicYear: '2026-2027',
-    directorName: 'M. Gaston Bantsimba',
-    motto: 'Discipline - Travail - Succès',
-    createdAt: new Date().toISOString(),
-    studentCount: 5,
-  },
-  {
-    id: 'school_saint_exupery',
-    name: 'Institut Bilingue Saint-Exupéry',
-    code: 'IBSE-01',
-    city: 'Pointe-Noire',
-    country: 'Congo',
-    currency: 'FCFA',
-    academicYear: '2026-2027',
-    directorName: 'Mme. Claire Mbemba',
-    motto: 'Excellence et Rigueur Académique',
+    directorName: '',
+    motto: '',
     createdAt: new Date().toISOString(),
     studentCount: 0,
   }
@@ -89,7 +101,13 @@ export default function App() {
   const [schools, setSchools] = useState<School[]>(() => {
     try {
       const saved = localStorage.getItem('adlon_schools');
-      return saved ? JSON.parse(saved) : DEFAULT_INITIAL_SCHOOLS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return DEFAULT_INITIAL_SCHOOLS;
     } catch {
       return DEFAULT_INITIAL_SCHOOLS;
     }
@@ -121,7 +139,7 @@ export default function App() {
     }
   });
 
-  // State management for active school data
+  // State management for active school data - clean initialization without mock data
   const [config, setConfig] = useState<SchoolConfig>(() => {
     try {
       const saved = localStorage.getItem('adlon_config');
@@ -133,19 +151,38 @@ export default function App() {
 
   const [students, setStudents] = useState<Student[]>(() => {
     try {
-      const saved = localStorage.getItem('adlon_students');
-      return saved ? JSON.parse(saved) : initialStudents;
+      const savedSchool = localStorage.getItem('adlon_current_school');
+      const schoolId = savedSchool ? JSON.parse(savedSchool)?.id : null;
+      const key = schoolId ? `adlon_students_${schoolId}` : 'adlon_students';
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const clean = parsed.filter((s: Student) => !isMockStudent(s));
+          return syncStudentsRanksAndCounts(clean);
+        }
+      }
+      return [];
     } catch {
-      return initialStudents;
+      return [];
     }
   });
 
   const [staff, setStaff] = useState<StaffMember[]>(() => {
     try {
-      const saved = localStorage.getItem('adlon_staff');
-      return saved ? JSON.parse(saved) : initialStaff;
+      const savedSchool = localStorage.getItem('adlon_current_school');
+      const schoolId = savedSchool ? JSON.parse(savedSchool)?.id : null;
+      const key = schoolId ? `adlon_staff_${schoolId}` : 'adlon_staff';
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((st: StaffMember) => !isMockStaff(st));
+        }
+      }
+      return [];
     } catch {
-      return initialStaff;
+      return [];
     }
   });
 
@@ -204,12 +241,23 @@ export default function App() {
   }, [config]);
 
   useEffect(() => {
-    localStorage.setItem('adlon_students', JSON.stringify(students));
-  }, [students]);
+    const cleanStudents = students.filter((s) => !isMockStudent(s));
+    localStorage.setItem('adlon_students', JSON.stringify(cleanStudents));
+    if (currentSchool) {
+      localStorage.setItem(`adlon_students_${currentSchool.id}`, JSON.stringify(cleanStudents));
+      setSchools((prev) =>
+        prev.map((s) => (s.id === currentSchool.id ? { ...s, studentCount: cleanStudents.length } : s))
+      );
+    }
+  }, [students, currentSchool]);
 
   useEffect(() => {
-    localStorage.setItem('adlon_staff', JSON.stringify(staff));
-  }, [staff]);
+    const cleanStaff = staff.filter((st) => !isMockStaff(st));
+    localStorage.setItem('adlon_staff', JSON.stringify(cleanStaff));
+    if (currentSchool) {
+      localStorage.setItem(`adlon_staff_${currentSchool.id}`, JSON.stringify(cleanStaff));
+    }
+  }, [staff, currentSchool]);
 
   // Sync active school data changes to config
   useEffect(() => {
@@ -255,8 +303,8 @@ export default function App() {
 
     const schoolId = currentSchool.id;
 
-    // Baseline initial seed for this school if needed
-    seedInitialFirestoreData(config, students, staff, schoolId).catch(console.warn);
+    // Baseline initial config for this school if needed (clean, no students or staff)
+    seedInitialFirestoreData(config, [], [], schoolId).catch(console.warn);
 
     const unsubConfig = subscribeToSchoolConfig(
       (remoteConfig) => {
@@ -270,9 +318,8 @@ export default function App() {
 
     const unsubStudents = subscribeToStudents(
       (remoteStudents) => {
-        if (remoteStudents && remoteStudents.length > 0) {
-          setStudents(remoteStudents);
-        }
+        const clean = (remoteStudents || []).filter((s) => !isMockStudent(s));
+        setStudents(syncStudentsRanksAndCounts(clean));
       },
       undefined,
       schoolId
@@ -280,9 +327,8 @@ export default function App() {
 
     const unsubStaff = subscribeToStaff(
       (remoteStaff) => {
-        if (remoteStaff && remoteStaff.length > 0) {
-          setStaff(remoteStaff);
-        }
+        const clean = (remoteStaff || []).filter((st) => !isMockStaff(st));
+        setStaff(clean);
       },
       undefined,
       schoolId
@@ -290,9 +336,7 @@ export default function App() {
 
     const unsubLogs = subscribeToAuditLogs(
       (remoteLogs) => {
-        if (remoteLogs && remoteLogs.length > 0) {
-          setUserStats((prev) => ({ ...prev, recentAuditLogs: remoteLogs }));
-        }
+        setUserStats((prev) => ({ ...prev, recentAuditLogs: remoteLogs || [] }));
       },
       undefined,
       schoolId
@@ -309,18 +353,52 @@ export default function App() {
   // Handle School Selection
   const handleSelectSchool = (school: School) => {
     setCurrentSchool(school);
-    // Reset role to prompt role choice for the selected school
     setCurrentRole(null);
+    try {
+      const schoolKey = `adlon_students_${school.id}`;
+      const savedStudents = localStorage.getItem(schoolKey);
+      if (savedStudents) {
+        const parsed = JSON.parse(savedStudents);
+        const clean = Array.isArray(parsed) ? parsed.filter((s: Student) => !isMockStudent(s)) : [];
+        setStudents(syncStudentsRanksAndCounts(clean));
+      } else {
+        setStudents([]);
+      }
+
+      const staffKey = `adlon_staff_${school.id}`;
+      const savedStaff = localStorage.getItem(staffKey);
+      if (savedStaff) {
+        const parsed = JSON.parse(savedStaff);
+        const clean = Array.isArray(parsed) ? parsed.filter((st: StaffMember) => !isMockStaff(st)) : [];
+        setStaff(clean);
+      } else {
+        setStaff([]);
+      }
+    } catch {
+      setStudents([]);
+      setStaff([]);
+    }
   };
 
   // Handle School Creation
   const handleCreateSchool = (newSchool: School) => {
-    setSchools((prev) => [newSchool, ...prev]);
+    const cleanSchool = { ...newSchool, studentCount: 0 };
+    setSchools((prev) => [cleanSchool, ...prev]);
     if (user) {
-      saveSchoolToFirestore(newSchool).catch(console.warn);
+      saveSchoolToFirestore(cleanSchool).catch(console.warn);
     }
-    setCurrentSchool(newSchool);
+    setCurrentSchool(cleanSchool);
     setCurrentRole(null);
+    setStudents([]);
+    setStaff([]);
+    try {
+      localStorage.setItem(`adlon_students_${cleanSchool.id}`, JSON.stringify([]));
+      localStorage.setItem(`adlon_staff_${cleanSchool.id}`, JSON.stringify([]));
+      localStorage.setItem('adlon_students', JSON.stringify([]));
+      localStorage.setItem('adlon_staff', JSON.stringify([]));
+    } catch (e) {
+      console.warn(e);
+    }
   };
 
   // Handle Role Selection
@@ -514,7 +592,7 @@ export default function App() {
 
   // Add new student
   const handleAddNewStudent = (newStudent: Student) => {
-    setStudents((prev) => [newStudent, ...prev]);
+    setStudents((prev) => syncStudentsRanksAndCounts([newStudent, ...prev], 'Trimestre 1', config));
     if (user) {
       saveStudentToFirestore(newStudent, currentSchool?.id).catch(console.warn);
     }
@@ -544,9 +622,10 @@ export default function App() {
 
   // Update students
   const handleUpdateStudents = (updatedStudents: Student[]) => {
-    setStudents(updatedStudents);
+    const synced = syncStudentsRanksAndCounts(updatedStudents, 'Trimestre 1', config);
+    setStudents(synced);
     if (user) {
-      updatedStudents.forEach((st) => {
+      synced.forEach((st) => {
         saveStudentToFirestore(st, currentSchool?.id).catch(console.warn);
       });
     }
@@ -780,8 +859,6 @@ export default function App() {
               <span>Rôle actif : <strong className="text-blue-500 font-semibold">{roleConfig.title}</strong></span>
               <span>•</span>
               <span>Devise : {currentSchool.currency}</span>
-              <span>•</span>
-              <span>Firestore : <strong className="text-amber-500 font-mono">erp-adlon</strong></span>
             </div>
           </div>
         </footer>
@@ -824,6 +901,7 @@ export default function App() {
             setPaymentModalStudent(s);
           }}
           onOpenBulletin={(s) => {
+            setDetailModalStudent(null);
             setReportCardStudent(s);
           }}
           onOpenPenalty={(s) => {

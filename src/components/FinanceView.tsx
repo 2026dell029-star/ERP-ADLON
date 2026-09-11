@@ -33,17 +33,17 @@ export const FinanceView: React.FC<FinanceViewProps> = ({
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  // Prorata Sandbox Calculator state (Pre-filled with Slide 5 CE2 on Nov 3 example)
+  // Prorata Sandbox Calculator state
   const [simCycle, setSimCycle] = useState<StudentCycle>('Primaire');
   const [simClass, setSimClass] = useState<string>('CE2');
-  const [simFirstName, setSimFirstName] = useState<string>('Dieuveil');
-  const [simLastName, setSimLastName] = useState<string>('Mabiala');
-  const [simDate, setSimDate] = useState<string>('2026-11-03');
-  const [simMonths, setSimMonths] = useState<number>(8);
+  const [simFirstName, setSimFirstName] = useState<string>('');
+  const [simLastName, setSimLastName] = useState<string>('');
+  const [simDate, setSimDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [simMonths, setSimMonths] = useState<number>(config.schoolDurationMonths || 10);
   const [simIsNew, setSimIsNew] = useState<boolean>(true);
   const [simHasCanteen, setSimHasCanteen] = useState<boolean>(false);
-  const [simParentName, setSimParentName] = useState<string>('M. Mabiala');
-  const [simParentPhone, setSimParentPhone] = useState<string>('066223344');
+  const [simParentName, setSimParentName] = useState<string>('');
+  const [simParentPhone, setSimParentPhone] = useState<string>('');
 
   const availableClassesForCycle = getClassesForCycle(selectedCycle, config);
   const simClassesForCycle = getClassesForCycle(simCycle, config);

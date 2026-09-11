@@ -5,21 +5,21 @@ import {
   ShieldCheck, 
   Mail, 
   Lock, 
-  User as UserIcon, 
   ArrowRight, 
   Sparkles, 
   CheckCircle2, 
   Building2, 
   Sun, 
   Moon, 
-  Flame,
   AlertCircle,
-  HelpCircle,
   GraduationCap,
   Copy,
   Check,
-  Zap,
-  Briefcase
+  Eye,
+  EyeOff,
+  FileSpreadsheet,
+  Coins,
+  HelpCircle
 } from 'lucide-react';
 
 interface AuthViewProps {
@@ -32,7 +32,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ theme, onToggleTheme }) => {
     signInWithEmail, 
     signUpWithEmail, 
     signInWithGoogle, 
-    signInWithDemo,
     resetUserPassword 
   } = useAuth();
 
@@ -40,6 +39,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ theme, onToggleTheme }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [domainErrorHost, setDomainErrorHost] = useState<string | null>(null);
   const [copiedHost, setCopiedHost] = useState(false);
@@ -58,24 +58,29 @@ export const AuthView: React.FC<AuthViewProps> = ({ theme, onToggleTheme }) => {
         await signInWithEmail(email, password);
       } else if (mode === 'register') {
         if (!displayName.trim()) {
-          setError('Veuillez renseigner votre nom complet.');
+          setError('Veuillez renseigner le nom de l\'école.');
           setLoading(false);
           return;
         }
         await signUpWithEmail(email, password, displayName.trim());
       } else if (mode === 'reset') {
         await resetUserPassword(email);
-        setSuccessMsg('Un lien de réinitialisation vous a été envoyé par e-mail.');
+        setSuccessMsg('Un lien de réinitialisation sécurisé vous a été envoyé par e-mail.');
       }
     } catch (err: any) {
       console.error('Auth error:', err);
       const msg = err.message || '';
-      if (msg.includes('auth/invalid-credential') || msg.includes('auth/wrong-password') || msg.includes('auth/user-not-found') || msg.includes('incorrect')) {
-        setError('Identifiants incorrects. Vérifiez votre e-mail ou mot de passe.');
+      if (
+        msg.includes('auth/invalid-credential') || 
+        msg.includes('auth/wrong-password') || 
+        msg.includes('auth/user-not-found') || 
+        msg.includes('incorrect')
+      ) {
+        setError('Identifiants incorrects. Vérifiez votre adresse e-mail ou votre mot de passe.');
       } else if (msg.includes('auth/email-already-in-use')) {
-        setError('Cette adresse e-mail est déjà associée à un compte.');
+        setError('Cette adresse e-mail est déjà associée à un compte établissement.');
       } else if (msg.includes('auth/weak-password')) {
-        setError('Le mot de passe doit contenir au moins 6 caractères.');
+        setError('Le mot de passe doit comporter au moins 6 caractères.');
       } else {
         setError(msg || 'Une erreur est survenue lors de l\'authentification.');
       }
@@ -100,22 +105,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ theme, onToggleTheme }) => {
         setDomainErrorHost(window.location.hostname);
         setError(`Ce domaine (${window.location.hostname}) n'est pas encore autorisé dans la console Firebase pour Google OAuth.`);
       } else {
-        setError(msg || 'Impossible de se connecter avec Google. Veuillez réessayer ou utiliser l\'accès direct ci-dessous.');
+        setError(msg || 'Impossible de se connecter avec Google. Veuillez utiliser la connexion par e-mail ci-dessous.');
       }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async (title: string, userEmail: string) => {
-    setError(null);
-    setDomainErrorHost(null);
-    setLoading(true);
-    try {
-      await signInWithDemo(title, userEmail);
-    } catch (err: any) {
-      console.error('Demo login error:', err);
-      setError('Erreur lors de l\'accès démo.');
     } finally {
       setLoading(false);
     }
@@ -129,244 +120,235 @@ export const AuthView: React.FC<AuthViewProps> = ({ theme, onToggleTheme }) => {
     }
   };
 
-  const fillTestCredentials = (testEmail: string, testPass: string) => {
-    setEmail(testEmail);
-    setPassword(testPass);
-    setMode('login');
-    setError(null);
-  };
-
   return (
-    <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#0B0F19] text-[#1D1D1F] dark:text-[#F8FAFC] flex flex-col justify-between transition-colors duration-200 antialiased selection:bg-blue-500/30">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#080C14] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col justify-between transition-colors duration-200 antialiased selection:bg-blue-500/25">
+      
       {/* Top Header */}
-      <header className="px-6 py-4 flex items-center justify-between border-b border-slate-200/80 dark:border-[#1E293B] bg-white/70 dark:bg-[#111827]/80 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+      <header className="px-6 sm:px-10 py-4.5 flex items-center justify-between border-b border-slate-200/80 dark:border-[#1E293B] bg-white/80 dark:bg-[#0D1322]/80 backdrop-blur-md sticky top-0 z-20">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-700 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-blue-600/20">
             <School className="w-5 h-5" />
           </div>
           <div>
-            <span className="font-extrabold text-base tracking-tight text-[#0F172A] dark:text-[#F8FAFC] block leading-none">
-              ERP ADLON
-            </span>
-            <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 tracking-wider uppercase mt-1 block">
-              Pilotage Scolaire & Multi-Établissements
+            <div className="flex items-center gap-2">
+              <span className="font-black text-base tracking-tight text-[#0F172A] dark:text-white leading-none">
+                ERP ADLON
+              </span>
+              <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
+                Portail Établissement
+              </span>
+            </div>
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 block">
+              Système de Pilotage Académique & Administratif
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/50 text-[11px] font-medium text-blue-700 dark:text-blue-300">
-            <Flame className="w-3.5 h-3.5 text-amber-500" />
-            <span>Serveur Firestore : <strong className="font-mono">erp-adlon</strong></span>
+          {/* Congolese Flag subtle ribbon indicator */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#009543]"></span>
+            <span>Brazzaville • Congo</span>
           </div>
 
           <button
             onClick={onToggleTheme}
-            className="p-2 rounded-xl text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] transition-colors cursor-pointer"
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer shadow-2xs"
             title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+            aria-label="Changer le thème"
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
           </button>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      {/* Main Content Area */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-12">
+        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
-          {/* Left Hero info (5 columns on desktop) */}
+          {/* Left Column: School Presentation & Features (5 cols) */}
           <div className="lg:col-span-5 space-y-6 text-left hidden lg:block">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-semibold">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Portail de Gestion Scolaire 2026-2027</span>
+            {/* National Banner */}
+            <div className="flex items-center gap-1.5 h-1.5 w-32 rounded-full overflow-hidden mb-2">
+              <div className="flex-1 bg-[#009543] h-full"></div>
+              <div className="flex-1 bg-[#FBDE4A] h-full"></div>
+              <div className="flex-1 bg-[#DC241F] h-full"></div>
             </div>
 
-            <h1 className="text-3xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC] leading-tight">
-              Gérez votre établissement avec précision et fluidité.
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200/60 dark:border-blue-900/40">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Session Scolaire 2026-2027</span>
+            </div>
+
+            <h1 className="text-3xl xl:text-4xl font-black tracking-tight text-[#0F172A] dark:text-white leading-tight">
+              Pilotez votre établissement scolaire en toute sérénité.
             </h1>
 
-            <p className="text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-              Connectez-vous pour accéder à votre école, ou créez un nouvel établissement en quelques secondes. Vos données sont synchronisées en temps réel.
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Connectez-vous pour accéder à l'espace de votre école, ou inscrivez un nouvel établissement pour configurer vos effectifs, vos classes et vos finances.
             </p>
 
+            {/* Feature Highlights */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#1E293B] shadow-2xs">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-4 h-4" />
+              <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-900/50">
+                  <GraduationCap className="w-4.5 h-4.5" />
                 </div>
                 <div>
-                  <h2 className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">3 Niveaux de Rôles Sécurisés</h2>
-                  <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">Dirigeant, Gestionnaire Financier & Directeur des Études.</p>
+                  <h2 className="text-xs font-bold text-[#0F172A] dark:text-white">Bulletins & Évaluations Officielles</h2>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                    Calcul automatique des moyennes pondérées, rangs de classe et impression A4 officielle conforme.
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#1E293B] shadow-2xs">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                  <Building2 className="w-4 h-4" />
+              <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-900/50">
+                  <Coins className="w-4.5 h-4.5" />
                 </div>
                 <div>
-                  <h2 className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">Multi-Établissements</h2>
-                  <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">Créez votre propre école ou rejoignez un complexe existant.</p>
+                  <h2 className="text-xs font-bold text-[#0F172A] dark:text-white">Trésorerie & Recouvrement WhatsApp</h2>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                    Suivi précis des écolages prorata temporis et relances automatiques par message aux parents.
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#1E293B] shadow-2xs">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-4 h-4" />
+              <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/50">
+                  <ShieldCheck className="w-4.5 h-4.5" />
                 </div>
                 <div>
-                  <h2 className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">Notes & Recouvrement WhatsApp (+242)</h2>
-                  <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">Calcul prorata temporis, bulletins scolaires et relances directes.</p>
+                  <h2 className="text-xs font-bold text-[#0F172A] dark:text-white">Rôles Sécurisés & Multi-Écoles</h2>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                    Accès dédié Direction, Gestionnaire et Études avec traçabilité intégrale des écritures.
+                  </p>
                 </div>
               </div>
+            </div>
+
+            {/* School Motto quote */}
+            <div className="pt-2 text-xs font-semibold text-slate-500 dark:text-slate-400 italic">
+              « Rigueur - Discipline - Excellence » • République du Congo
             </div>
           </div>
 
-          {/* Right Auth Card (7 columns on desktop) */}
+          {/* Right Column: Authentication Card (7 cols) */}
           <div className="lg:col-span-7">
-            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-6 sm:p-8 shadow-xl shadow-slate-200/50 dark:shadow-none transition-colors">
+            <div className="bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 sm:p-9 shadow-xl shadow-slate-200/40 dark:shadow-none transition-colors">
               
               {/* Header inside card */}
               <div className="text-center mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white mx-auto flex items-center justify-center mb-3 shadow-lg shadow-blue-500/25">
-                  <Lock className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white mx-auto flex items-center justify-center mb-3.5 shadow-lg shadow-blue-500/25">
+                  {mode === 'register' ? (
+                    <Building2 className="w-6 h-6" />
+                  ) : (
+                    <Lock className="w-6 h-6" />
+                  )}
                 </div>
-                <h2 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                  {mode === 'login' && 'Connexion à votre compte'}
-                  {mode === 'register' && 'Création d\'un compte administrateur'}
+
+                <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] dark:text-white tracking-tight">
+                  {mode === 'login' && 'Connexion à votre espace'}
+                  {mode === 'register' && 'Créer une nouvelle école'}
                   {mode === 'reset' && 'Réinitialiser votre mot de passe'}
                 </h2>
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
-                  {mode === 'login' && 'Entrez vos identifiants pour accéder à vos établissements'}
-                  {mode === 'register' && 'Inscrivez-vous pour créer et piloter votre école'}
-                  {mode === 'reset' && 'Recevez un lien par e-mail pour créer un nouveau mot de passe'}
+
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-sm mx-auto">
+                  {mode === 'login' && 'Entrez vos identifiants pour accéder à la gestion de votre établissement.'}
+                  {mode === 'register' && 'Inscrivez votre établissement scolaire pour commencer à le piloter.'}
+                  {mode === 'reset' && 'Saisissez votre e-mail pour recevoir les instructions de réinitialisation.'}
                 </p>
               </div>
 
-              {/* Quick Demo Access Bar */}
-              <div className="mb-6 p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200/80 dark:border-blue-900/50 rounded-xl">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-300">
-                    <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    <span>Accès Rapide Démo (1 Clic)</span>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-200/70 dark:bg-blue-900/60 font-semibold text-blue-800 dark:text-blue-200">
-                    Sans attente
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDemoLogin('M. Gaston Bantsimba (Directeur Fondateur)', 'directeur@adlon.cg')}
-                    disabled={loading}
-                    className="p-2 bg-white dark:bg-[#111827] hover:bg-blue-50/80 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800/60 rounded-lg text-left transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                  >
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                      <CrownIcon className="w-3 h-3 text-amber-500" />
-                      <span>👑 Dirigeant</span>
-                    </div>
-                    <div className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">Accès complet & école</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDemoLogin('Mme. Mireille Kouka (Gestionnaire Trésorerie)', 'gestionnaire@adlon.cg')}
-                    disabled={loading}
-                    className="p-2 bg-white dark:bg-[#111827] hover:bg-blue-50/80 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800/60 rounded-lg text-left transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                  >
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                      <Briefcase className="w-3 h-3 text-blue-500" />
-                      <span>💼 Gestionnaire</span>
-                    </div>
-                    <div className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">Finances & Inscriptions</div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Tabs for Login / Register */}
+              {/* Segmented Mode Switcher: "Se connecter" vs "Créer une école" */}
               {mode !== 'reset' && (
-                <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-[#1E293B] rounded-xl mb-5 text-xs font-semibold">
+                <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl mb-6 text-xs font-bold border border-slate-200/60 dark:border-slate-700/60">
                   <button
                     type="button"
-                    onClick={() => { setMode('login'); setError(null); setDomainErrorHost(null); setSuccessMsg(null); }}
-                    className={`py-2 rounded-lg transition-all cursor-pointer ${
+                    onClick={() => { 
+                      setMode('login'); 
+                      setError(null); 
+                      setDomainErrorHost(null); 
+                      setSuccessMsg(null); 
+                    }}
+                    className={`py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
                       mode === 'login'
-                        ? 'bg-white dark:bg-[#0B0F19] text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
-                        : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white'
+                        ? 'bg-white dark:bg-[#0B0F19] text-blue-600 dark:text-blue-400 shadow-xs font-extrabold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    Se connecter
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Se connecter</span>
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => { setMode('register'); setError(null); setDomainErrorHost(null); setSuccessMsg(null); }}
-                    className={`py-2 rounded-lg transition-all cursor-pointer ${
+                    onClick={() => { 
+                      setMode('register'); 
+                      setError(null); 
+                      setDomainErrorHost(null); 
+                      setSuccessMsg(null); 
+                    }}
+                    className={`py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
                       mode === 'register'
-                        ? 'bg-white dark:bg-[#0B0F19] text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
-                        : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white'
+                        ? 'bg-white dark:bg-[#0B0F19] text-blue-600 dark:text-blue-400 shadow-xs font-extrabold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    Créer un compte
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>Créer une école</span>
                   </button>
                 </div>
               )}
 
-              {/* Domain Warning / Info when unauthorized domain in Firebase */}
+              {/* Domain Warning (Google OAuth domain setup) */}
               {domainErrorHost && (
-                <div className="mb-4 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200">
+                <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200">
                   <div className="flex items-start gap-2 mb-2 font-bold">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                    <span>Configuration Google Auth requise dans Firebase</span>
+                    <span>Configuration Google OAuth requise</span>
                   </div>
                   <p className="text-[11px] text-amber-800 dark:text-amber-300 mb-2 leading-relaxed">
-                    Pour autoriser Google OAuth sur cette URL d'aperçu, ajoutez ce domaine dans la Console Firebase (<strong>Authentication &gt; Settings &gt; Authorized domains</strong>) :
+                    Pour autoriser Google OAuth sur cette adresse, ajoutez ce domaine dans la console Firebase (<strong>Authentication &gt; Settings &gt; Authorized domains</strong>) :
                   </p>
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-100/70 dark:bg-amber-900/50 font-mono text-[11px] text-amber-950 dark:text-amber-100 break-all">
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-100/70 dark:bg-amber-900/50 font-mono text-[11px] text-amber-950 dark:text-amber-100 break-all">
                     <span className="flex-1 select-all">{domainErrorHost}</span>
                     <button
                       type="button"
                       onClick={handleCopyHost}
-                      className="px-2 py-1 bg-white dark:bg-[#111827] text-amber-800 dark:text-amber-200 hover:text-amber-950 rounded border border-amber-300 dark:border-amber-700 text-[10px] font-sans font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+                      className="px-2.5 py-1 bg-white dark:bg-[#111827] text-amber-800 dark:text-amber-200 hover:text-amber-950 rounded-lg border border-amber-300 dark:border-amber-700 text-[10px] font-sans font-bold flex items-center gap-1 cursor-pointer shrink-0"
                     >
                       {copiedHost ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedHost ? 'Copié !' : 'Copier'}</span>
-                    </button>
-                  </div>
-                  <div className="mt-2.5 flex items-center justify-between text-[11px]">
-                    <span className="text-amber-800 dark:text-amber-300">Ou continuez directement ci-dessous :</span>
-                    <button
-                      type="button"
-                      onClick={() => handleDemoLogin('M. Gaston Bantsimba (Directeur Fondateur)', 'directeur@adlon.cg')}
-                      className="font-bold text-blue-700 dark:text-blue-300 underline cursor-pointer"
-                    >
-                      Entrer sans Google &rarr;
+                      <span>{copiedHost ? 'Copié' : 'Copier'}</span>
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Standard Alerts */}
+              {/* Standard Error Alert */}
               {error && !domainErrorHost && (
-                <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 flex items-start gap-2.5 text-xs text-red-700 dark:text-red-300">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
-                  <span>{error}</span>
+                <div className="mb-5 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 flex items-start gap-3 text-xs text-rose-700 dark:text-rose-300">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+                  <span className="font-medium leading-relaxed">{error}</span>
                 </div>
               )}
 
+              {/* Success Alert */}
               {successMsg && (
-                <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-300">
+                <div className="mb-5 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 flex items-start gap-3 text-xs text-emerald-700 dark:text-emerald-300">
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500" />
-                  <span>{successMsg}</span>
+                  <span className="font-medium leading-relaxed">{successMsg}</span>
                 </div>
               )}
 
-              {/* Google Sign-in */}
+              {/* Google Sign-in Button */}
               {mode !== 'reset' && (
                 <>
                   <button
                     type="button"
                     onClick={handleGoogleLogin}
                     disabled={loading}
-                    className="w-full py-2.5 px-4 bg-slate-50 dark:bg-[#1E293B]/70 hover:bg-slate-100 dark:hover:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] flex items-center justify-center gap-3 transition-colors cursor-pointer shadow-2xs disabled:opacity-60"
+                    className="w-full py-3 px-4 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-white flex items-center justify-center gap-3 transition-colors cursor-pointer shadow-xs disabled:opacity-60"
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24">
                       <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
@@ -377,13 +359,13 @@ export const AuthView: React.FC<AuthViewProps> = ({ theme, onToggleTheme }) => {
                     <span>Continuer avec Google</span>
                   </button>
 
-                  <div className="relative my-4">
+                  <div className="relative my-5">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-slate-200 dark:border-[#1E293B]"></div>
+                      <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
                     </div>
                     <div className="relative flex justify-center text-[11px] uppercase">
-                      <span className="bg-white dark:bg-[#111827] px-3 text-[#64748B] dark:text-[#94A3B8] font-medium">
-                        Ou par e-mail
+                      <span className="bg-white dark:bg-[#111827] px-3.5 text-slate-400 dark:text-slate-500 font-bold tracking-wider">
+                        ou par e-mail
                       </span>
                     </div>
                   </div>
@@ -391,110 +373,125 @@ export const AuthView: React.FC<AuthViewProps> = ({ theme, onToggleTheme }) => {
               )}
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-3.5">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Field: Nom de l'école (Shown when creating school) */}
                 {mode === 'register' && (
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
-                      Nom complet ou Titre
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                      Nom de l'école <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
-                      <UserIcon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-[#94A3B8]" />
+                      <School className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         type="text"
                         required
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="Ex: M. Gaston Bantsimba (Directeur)"
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-[#0F172A] dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all"
+                        placeholder="Ex: Complexe Scolaire ADLON, Lycée Savorgnan..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                     </div>
+                    <span className="text-[10.5px] text-slate-400 mt-1 block">
+                      Ce nom figurera sur les bulletins scolaires officiels et les états de paiement.
+                    </span>
                   </div>
                 )}
 
+                {/* Field: Email */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
-                      Adresse e-mail
-                    </label>
-                    {mode === 'login' && (
-                      <button
-                        type="button"
-                        onClick={() => fillTestCredentials('admin@adlon.cg', 'adlon2026')}
-                        className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-medium cursor-pointer"
-                      >
-                        Remplir test (admin@adlon.cg)
-                      </button>
-                    )}
-                  </div>
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                    Adresse e-mail <span className="text-rose-500">*</span>
+                  </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-[#94A3B8]" />
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="nom@ecole-adlon.cg"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-[#0F172A] dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all"
+                      placeholder="direction@votre-ecole.cg"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                   </div>
                 </div>
 
+                {/* Field: Password */}
                 {mode !== 'reset' && (
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
-                        Mot de passe
+                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Mot de passe <span className="text-rose-500">*</span>
                       </label>
                       {mode === 'login' && (
                         <button
                           type="button"
-                          onClick={() => { setMode('reset'); setError(null); setDomainErrorHost(null); setSuccessMsg(null); }}
-                          className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                          onClick={() => { 
+                            setMode('reset'); 
+                            setError(null); 
+                            setDomainErrorHost(null); 
+                            setSuccessMsg(null); 
+                          }}
+                          className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold cursor-pointer"
                         >
                           Mot de passe oublié ?
                         </button>
                       )}
                     </div>
                     <div className="relative">
-                      <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-[#94A3B8]" />
+                      <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-[#0F172A] dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all"
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 cursor-pointer"
+                        title={showPassword ? 'Masquer' : 'Afficher'}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
                 )}
 
+                {/* Submit Action Button */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl text-xs shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 mt-1"
+                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold rounded-2xl text-xs sm:text-sm shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 mt-2"
                 >
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
                       <span>
-                        {mode === 'login' && 'Se connecter à l\'ERP'}
-                        {mode === 'register' && 'Créer mon compte & Démarrer'}
-                        {mode === 'reset' && 'Envoyer les instructions'}
+                        {mode === 'login' && 'Se connecter à l\'espace école'}
+                        {mode === 'register' && 'Créer l\'école & Commencer'}
+                        {mode === 'reset' && 'Envoyer le lien de réinitialisation'}
                       </span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
 
+                {/* Reset Mode Return */}
                 {mode === 'reset' && (
                   <button
                     type="button"
-                    onClick={() => { setMode('login'); setError(null); setDomainErrorHost(null); setSuccessMsg(null); }}
-                    className="w-full py-2 text-xs text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white transition-colors cursor-pointer"
+                    onClick={() => { 
+                      setMode('login'); 
+                      setError(null); 
+                      setDomainErrorHost(null); 
+                      setSuccessMsg(null); 
+                    }}
+                    className="w-full py-2.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer font-semibold"
                   >
-                    Retourner à l'écran de connexion
+                    &larr; Retourner à l'écran de connexion
                   </button>
                 )}
               </form>
@@ -504,17 +501,12 @@ export const AuthView: React.FC<AuthViewProps> = ({ theme, onToggleTheme }) => {
       </main>
 
       {/* Footer */}
-      <footer className="py-4 px-6 border-t border-slate-200/80 dark:border-[#1E293B] bg-white/50 dark:bg-[#111827]/50 text-center text-xs text-[#64748B] dark:text-[#94A3B8]">
-        <span>ERP ADLON • Système Unifié de Pilotage Scolaire • Base de données Firebase Sécurisée</span>
+      <footer className="py-4.5 px-6 border-t border-slate-200/80 dark:border-[#1E293B] bg-white/60 dark:bg-[#0D1322]/60 text-center text-xs text-slate-500 dark:text-slate-400">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>ERP ADLON • Portail Officiel de Pilotage Scolaire & Administratif</span>
+          <span className="text-[11px] text-slate-400">République du Congo • MEP-DGEP</span>
+        </div>
       </footer>
     </div>
   );
 };
-
-function CrownIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z" />
-    </svg>
-  );
-}

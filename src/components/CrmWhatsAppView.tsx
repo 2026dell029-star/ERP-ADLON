@@ -206,7 +206,9 @@ export const CrmWhatsAppView: React.FC<CrmWhatsAppViewProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#64748B] dark:text-[#94A3B8]">Moyenne :</span>
-                    <strong className="font-mono text-[#0F172A] dark:text-[#F8FAFC]">{s.gpa}/20 (Rang : {s.classRank}e)</strong>
+                    <strong className="font-mono text-[#0F172A] dark:text-[#F8FAFC]">
+                      {s.gpa}/20 (Rang : {s.classRank === 1 ? '1er' : `${s.classRank}ème`} / {s.totalStudentsInClass || 1})
+                    </strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#64748B] dark:text-[#94A3B8]">Absences réunions :</span>

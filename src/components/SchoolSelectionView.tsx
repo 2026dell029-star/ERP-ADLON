@@ -378,7 +378,7 @@ export const SchoolSelectionView: React.FC<SchoolSelectionViewProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="Ex: M. Gaston Bantsimba"
+                  placeholder="Ex: Le Directeur / La Directrice"
                   value={directorName}
                   onChange={(e) => setDirectorName(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-[#0F172A] dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500"

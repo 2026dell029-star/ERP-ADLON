@@ -39,7 +39,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const recoveryRate = totalDue > 0 ? (totalPaid / totalDue) * 100 : 0;
 
   const cashGap = config.availableBankCash - config.monthlyFixedPayroll;
-  const isDeficit = cashGap < 0;
+  const isDeficit = config.monthlyFixedPayroll > 0 && cashGap < 0;
+  const coveragePct = config.monthlyFixedPayroll > 0 
+    ? Math.round((config.availableBankCash / config.monthlyFixedPayroll) * 100) 
+    : 100;
 
   const topUnpaid = [...students]
     .filter((s) => s.balanceRemaining > 0)
@@ -64,7 +67,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {isDeficit ? 'Attention Trésorerie Requise' : 'Trésorerie Équilibrée'}
               </span>
               <span className="text-xs text-blue-200/80">
-                Année Scolaire 2026-2027 (10 mois)
+                Année Scolaire {config.academicYear || '2026-2027'} ({config.schoolDurationMonths || 10} mois)
               </span>
             </div>
 
@@ -73,15 +76,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </h2>
 
             <p className="text-xs sm:text-sm text-blue-100/85 leading-relaxed">
-              La trésorerie en banque s'élève à <strong className="text-white font-mono font-bold">{formatFCFA(config.availableBankCash)}</strong> face à une masse salariale fixe de <strong className="text-white font-mono font-bold">{formatFCFA(config.monthlyFixedPayroll)}</strong>.
-              {isDeficit ? (
-                <span className="text-amber-200 font-semibold block sm:inline sm:ml-1">
-                  Écart de {formatFCFA(Math.abs(cashGap))}. Déclenchez la relance WhatsApp du Top Impayés pour sécuriser les salaires du 30.
-                </span>
+              {config.monthlyFixedPayroll === 0 && config.availableBankCash === 0 ? (
+                <span>Trésorerie et masse salariale prêtes à être configurées selon la réalité financière de votre école.</span>
               ) : (
-                <span className="text-emerald-300 font-semibold block sm:inline sm:ml-1">
-                  Les engagements salariaux sont couverts.
-                </span>
+                <>
+                  La trésorerie en banque s'élève à <strong className="text-white font-mono font-bold">{formatFCFA(config.availableBankCash)}</strong> face à une masse salariale fixe de <strong className="text-white font-mono font-bold">{formatFCFA(config.monthlyFixedPayroll)}</strong>.
+                  {isDeficit ? (
+                    <span className="text-amber-200 font-semibold block sm:inline sm:ml-1">
+                      Écart de {formatFCFA(Math.abs(cashGap))}. Déclenchez la relance WhatsApp du Top Impayés pour sécuriser les salaires.
+                    </span>
+                  ) : (
+                    <span className="text-emerald-300 font-semibold block sm:inline sm:ml-1">
+                      Les engagements salariaux sont couverts.
+                    </span>
+                  )}
+                </>
               )}
             </p>
           </div>
@@ -91,7 +100,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-right shadow-inner min-w-[180px]">
               <span className="text-[11px] text-blue-200/90 block font-medium">Couverture Salariale</span>
               <div className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-white">
-                {Math.round((config.availableBankCash / config.monthlyFixedPayroll) * 100)}%
+                {coveragePct}%
               </div>
               <span className="text-[11px] text-blue-200/80 block mt-0.5">
                 {isDeficit ? `Besoin : ${formatFCFA(Math.max(0, -cashGap))}` : 'Position saine'}

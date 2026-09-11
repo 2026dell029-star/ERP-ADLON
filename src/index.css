@@ -284,4 +284,102 @@ html:not(.dark) .fixed .bg-white,
   background: #94a3b880;
 }
 
+/* Print optimizations for official Congolese bulletin */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Unclip any screen-level containers */
+  #root,
+  #root > div,
+  #root > div > div {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  /* Hide app navigation chrome during print */
+  aside,
+  header,
+  nav,
+  main,
+  .print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Reveal modal and printable bulletin */
+  .fixed.inset-0 {
+    position: static !important;
+    display: block !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .fixed.inset-0 > div {
+    max-height: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  #printable-official-bulletin {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 4mm !important;
+    border: 2px solid #000000 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  /* Page break rules */
+  table, tr, td, th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Ensure text colors are crisp dark print */
+  #printable-official-bulletin,
+  #printable-official-bulletin * {
+    color: #000000 !important;
+    border-color: #222222 !important;
+  }
+
+  /* Keep colors on national Congolese ribbon */
+  #printable-official-bulletin .bg-\[\#009543\] {
+    background-color: #009543 !important;
+  }
+  #printable-official-bulletin .bg-\[\#FBDE4A\] {
+    background-color: #fbde4a !important;
+  }
+  #printable-official-bulletin .bg-\[\#DC241F\] {
+    background-color: #dc241f !important;
+  }
+}
+
 

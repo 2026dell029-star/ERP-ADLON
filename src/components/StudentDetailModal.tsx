@@ -108,7 +108,9 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-200/60 dark:border-[#222F46]/60">
                 <span className="text-[#64748B] dark:text-[#94A3B8]">Rang de classe :</span>
-                <strong className="font-mono text-[#0F172A] dark:text-[#F8FAFC] font-bold">{student.classRank}e sur {student.totalStudentsInClass}</strong>
+                <strong className="font-mono text-[#0F172A] dark:text-[#F8FAFC] font-bold">
+                  {student.classRank === 1 ? '1er' : `${student.classRank}ème`} sur {student.totalStudentsInClass || 1} élèves
+                </strong>
               </div>
               <div className="flex justify-between py-1.5">
                 <span className="text-[#64748B] dark:text-[#94A3B8]">Appréciation :</span>

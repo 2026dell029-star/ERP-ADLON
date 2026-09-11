@@ -92,6 +92,7 @@ export interface SubjectGrade {
   compositionScore?: number; // Note de composition /20
   teacherName?: string;
   teacherRemark?: string;
+  classAverage?: number;
 }
 
 export interface StudentTermReport {

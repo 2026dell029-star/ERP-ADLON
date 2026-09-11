@@ -109,9 +109,7 @@ export function subscribeToStudents(
       snapshot.forEach((d) => {
         list.push({ ...d.data(), id: d.id } as Student);
       });
-      if (list.length > 0) {
-        onData(list);
-      }
+      onData(list);
     },
     (error) => {
       console.warn('Erreur lecture Firestore Students:', error);
@@ -163,9 +161,7 @@ export function subscribeToStaff(
       snapshot.forEach((d) => {
         list.push({ ...d.data(), id: d.id } as StaffMember);
       });
-      if (list.length > 0) {
-        onData(list);
-      }
+      onData(list);
     },
     (error) => {
       console.warn('Erreur lecture Firestore Staff:', error);
@@ -218,9 +214,7 @@ export function subscribeToAuditLogs(
       snapshot.forEach((d) => {
         logs.push({ ...d.data(), id: d.id } as AuditLog);
       });
-      if (logs.length > 0) {
-        onData(logs);
-      }
+      onData(logs);
     },
     (error) => {
       console.warn('Erreur lecture Firestore AuditLogs:', error);
@@ -246,16 +240,14 @@ export async function addAuditLogToFirestore(log: AuditLog, schoolId?: string): 
 // ==================== INITIAL SEEDING ====================
 export async function seedInitialFirestoreData(
   defaultConfig: SchoolConfig,
-  defaultStudents: Student[],
-  defaultStaff: StaffMember[],
+  _defaultStudents: Student[],
+  _defaultStaff: StaffMember[],
   schoolId?: string
 ): Promise<boolean> {
   try {
     const configPath = schoolId ? `schools/${schoolId}/settings/schoolConfig` : 'settings/schoolConfig';
-    const studentsCol = schoolId ? `schools/${schoolId}/${STUDENTS_COLLECTION}` : STUDENTS_COLLECTION;
-    const staffCol = schoolId ? `schools/${schoolId}/${STAFF_COLLECTION}` : STAFF_COLLECTION;
 
-    // 1. Check if config exists
+    // Check if config exists, only initialize clean config if missing
     const configSnap = await getDoc(doc(db, configPath));
     let seeded = false;
 
@@ -264,30 +256,7 @@ export async function seedInitialFirestoreData(
       seeded = true;
     }
 
-    // 2. Check if students exist
-    const studentsSnap = await getDocs(query(collection(db, studentsCol), limit(1)));
-    if (studentsSnap.empty && defaultStudents.length > 0) {
-      const batch = writeBatch(db);
-      defaultStudents.forEach((student) => {
-        const ref = doc(db, studentsCol, student.id);
-        batch.set(ref, JSON.parse(JSON.stringify(student)));
-      });
-      await batch.commit();
-      seeded = true;
-    }
-
-    // 3. Check if staff exists
-    const staffSnap = await getDocs(query(collection(db, staffCol), limit(1)));
-    if (staffSnap.empty && defaultStaff.length > 0) {
-      const batch = writeBatch(db);
-      defaultStaff.forEach((member) => {
-        const ref = doc(db, staffCol, member.id);
-        batch.set(ref, JSON.parse(JSON.stringify(member)));
-      });
-      await batch.commit();
-      seeded = true;
-    }
-
+    // Never seed mock students or staff - schools must be completely clean
     return seeded;
   } catch (error) {
     console.warn('Initial seeding note (les règles de sécurité requièrent une authentification active):', error);

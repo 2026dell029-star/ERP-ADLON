@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const fallbackUser = {
           uid: 'demo-admin-uid',
           email: email || 'admin@adlon.cg',
-          displayName: 'M. Gaston Bantsimba (Directeur)',
+          displayName: 'Administrateur Établissement',
           emailVerified: true,
           isAnonymous: false,
         } as unknown as User;

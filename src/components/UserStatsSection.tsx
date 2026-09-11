@@ -178,22 +178,30 @@ export const UserStatsSection: React.FC<UserStatsSectionProps> = ({ stats }) => 
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E5EA] text-[#1D1D1F]">
-                {stats.roleBreakdown.map((r) => {
-                  const rate = Math.round((r.activeToday / r.totalAccounts) * 100);
-                  return (
-                    <tr key={r.role} className="hover:bg-[#F5F5F7]/50 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-[#1D1D1F]">{r.role}</td>
-                      <td className="py-3 px-4 text-[#86868B]">{r.totalAccounts} comptes</td>
-                      <td className="py-3 px-4 font-mono font-semibold text-[#1D1D1F]">{r.activeToday}</td>
-                      <td className="py-3 px-4 font-mono text-[#86868B]">{r.avgDailyTimeMin} min / jour</td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="font-mono font-semibold text-[#0071E3] bg-[#0071E3]/10 px-2 py-0.5 rounded-full">
-                          {rate}%
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {stats.roleBreakdown.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-[#86868B]">
+                      Aucun profil utilisateur configuré pour le moment.
+                    </td>
+                  </tr>
+                ) : (
+                  stats.roleBreakdown.map((r) => {
+                    const rate = r.totalAccounts > 0 ? Math.round((r.activeToday / r.totalAccounts) * 100) : 0;
+                    return (
+                      <tr key={r.role} className="hover:bg-[#F5F5F7]/50 transition-colors">
+                        <td className="py-3 px-4 font-semibold text-[#1D1D1F]">{r.role}</td>
+                        <td className="py-3 px-4 text-[#86868B]">{r.totalAccounts} comptes</td>
+                        <td className="py-3 px-4 font-mono font-semibold text-[#1D1D1F]">{r.activeToday}</td>
+                        <td className="py-3 px-4 font-mono text-[#86868B]">{r.avgDailyTimeMin} min / jour</td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="font-mono font-semibold text-[#0071E3] bg-[#0071E3]/10 px-2 py-0.5 rounded-full">
+                            {rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -207,26 +215,32 @@ export const UserStatsSection: React.FC<UserStatsSectionProps> = ({ stats }) => 
             <span>Courbe de charge des connexions journalières</span>
             <span className="flex items-center gap-1.5 text-[#0071E3] font-medium">
               <span className="w-2 h-2 rounded-full bg-[#0071E3]"></span>
-              Pics identifiés (Appel du matin, Cantine, Relances de 16h30)
+              Activité en temps réel
             </span>
           </div>
 
-          <div className="h-44 flex items-end gap-2 pt-6 pb-2 px-2 border-b border-[#E5E5EA]">
-            {stats.hourlyActivity.map((item) => (
-              <div key={item.hour} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
-                <div className="text-[10px] font-mono text-[#86868B] opacity-0 group-hover:opacity-100 transition-opacity">
-                  {item.trafficPct}%
+          {stats.hourlyActivity.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-xl border border-[#E5E5EA] text-[#86868B] text-xs">
+              Les statistiques horaires seront compilées au fur et à mesure de l'utilisation de l'établissement.
+            </div>
+          ) : (
+            <div className="h-44 flex items-end gap-2 pt-6 pb-2 px-2 border-b border-[#E5E5EA]">
+              {stats.hourlyActivity.map((item) => (
+                <div key={item.hour} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
+                  <div className="text-[10px] font-mono text-[#86868B] opacity-0 group-hover:opacity-100 transition-opacity">
+                    {item.trafficPct}%
+                  </div>
+                  <div 
+                    className={`w-full rounded-t-md transition-all ${
+                      item.isPeak ? 'bg-[#0071E3]' : 'bg-[#E5E5EA] group-hover:bg-[#0071E3]/50'
+                    }`}
+                    style={{ height: `${item.trafficPct}%` }}
+                  />
+                  <span className="text-[10px] font-mono text-[#86868B]">{item.hour}</span>
                 </div>
-                <div 
-                  className={`w-full rounded-t-md transition-all ${
-                    item.isPeak ? 'bg-[#0071E3]' : 'bg-[#E5E5EA] group-hover:bg-[#0071E3]/50'
-                  }`}
-                  style={{ height: `${item.trafficPct}%` }}
-                />
-                <span className="text-[10px] font-mono text-[#86868B]">{item.hour}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2">
             <div className="p-3 rounded-lg bg-[#F5F5F7] border border-[#E5E5EA]/60">
@@ -271,29 +285,35 @@ export const UserStatsSection: React.FC<UserStatsSectionProps> = ({ stats }) => 
             </div>
           </div>
 
-          <div className="divide-y divide-[#E5E5EA] border border-[#E5E5EA] rounded-xl overflow-hidden text-xs">
-            {filteredAuditLogs.map((log) => (
-              <div key={log.id} className="p-3 bg-white hover:bg-[#F5F5F7]/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <strong className="text-[#1D1D1F] font-semibold">{log.user}</strong>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#F5F5F7] text-[#86868B]">
-                      {log.role}
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#0071E3]/10 text-[#0071E3] font-medium">
-                      {log.category}
-                    </span>
+          {filteredAuditLogs.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-xl border border-[#E5E5EA] text-[#86868B] text-xs">
+              Aucune action enregistrée dans le journal d'audit pour le moment.
+            </div>
+          ) : (
+            <div className="divide-y divide-[#E5E5EA] border border-[#E5E5EA] rounded-xl overflow-hidden text-xs">
+              {filteredAuditLogs.map((log) => (
+                <div key={log.id} className="p-3 bg-white hover:bg-[#F5F5F7]/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <strong className="text-[#1D1D1F] font-semibold">{log.user}</strong>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#F5F5F7] text-[#86868B]">
+                        {log.role}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#0071E3]/10 text-[#0071E3] font-medium">
+                        {log.category}
+                      </span>
+                    </div>
+                    <p className="text-[#1D1D1F]">{log.action}</p>
                   </div>
-                  <p className="text-[#1D1D1F]">{log.action}</p>
-                </div>
 
-                <div className="text-right shrink-0 text-[11px] text-[#86868B] font-mono">
-                  <div>{log.timestamp}</div>
-                  <div className="text-[10px] text-[#86868B]/70">{log.ip}</div>
+                  <div className="text-right shrink-0 text-[11px] text-[#86868B] font-mono">
+                    <div>{log.timestamp}</div>
+                    <div className="text-[10px] text-[#86868B]/70">{log.ip}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -30,59 +30,59 @@ export function getDefaultSubjectsForClass(classLevel: string, cycle: string, co
         subjectId: sub.id,
         subjectName: sub.name,
         coefficient: sub.coefficient,
-        score: 13.5,
-        homeworkScore: 13,
-        compositionScore: 14,
-        teacherName: sub.defaultTeacher || 'Enseignant Titulaire',
+        score: 0,
+        homeworkScore: 0,
+        compositionScore: 0,
+        teacherName: sub.defaultTeacher || '',
       }));
     }
   }
 
   if (normCycle.includes('préscolaire') || normClass.includes('maternelle') || normClass.includes('section')) {
     return [
-      { subjectId: 'lang', subjectName: 'Langage & Expression Orale', coefficient: 2, score: 16, homeworkScore: 16, compositionScore: 16, teacherName: 'Mme Brigitte Bouesso' },
-      { subjectId: 'graph', subjectName: 'Graphisme & Écriture', coefficient: 2, score: 15.5, homeworkScore: 15, compositionScore: 16, teacherName: 'Mme Brigitte Bouesso' },
-      { subjectId: 'eveil', subjectName: 'Éveil Sensoriel & Scientifique', coefficient: 2, score: 16.5, homeworkScore: 16, compositionScore: 17, teacherName: 'Mme Brigitte Bouesso' },
-      { subjectId: 'motr', subjectName: 'Motricité & Coordination', coefficient: 1, score: 17, homeworkScore: 17, compositionScore: 17, teacherName: 'M. Paul Mavoungou' },
-      { subjectId: 'cond', subjectName: 'Conduite & Socialisation', coefficient: 1, score: 18, homeworkScore: 18, compositionScore: 18, teacherName: 'Mme Brigitte Bouesso' },
+      { subjectId: 'lang', subjectName: 'Langage & Expression Orale', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'graph', subjectName: 'Graphisme & Écriture', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'eveil', subjectName: 'Éveil Sensoriel & Scientifique', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'motr', subjectName: 'Motricité & Coordination', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'cond', subjectName: 'Conduite & Socialisation', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
     ];
   }
 
   if (normCycle.includes('primaire') || normClass.includes('cp') || normClass.includes('ce') || normClass.includes('cm')) {
     return [
-      { subjectId: 'fran', subjectName: 'Français & Orthographe', coefficient: 3, score: 14, homeworkScore: 13.5, compositionScore: 14.2, teacherName: 'Mme Brigitte Bouesso' },
-      { subjectId: 'math', subjectName: 'Mathématiques & Problèmes', coefficient: 3, score: 15, homeworkScore: 14.5, compositionScore: 15.2, teacherName: 'M. Aimé Loubaki' },
-      { subjectId: 'scie', subjectName: 'Sciences & Éveil', coefficient: 2, score: 14.5, homeworkScore: 14, compositionScore: 14.8, teacherName: 'Mme Brigitte Bouesso' },
-      { subjectId: 'hg', subjectName: 'Histoire & Géographie', coefficient: 1, score: 13.5, homeworkScore: 13, compositionScore: 13.8, teacherName: 'M. Serge Ngoma' },
-      { subjectId: 'civ', subjectName: 'Éducation Civique & Morale', coefficient: 1, score: 16, homeworkScore: 16, compositionScore: 16, teacherName: 'Mme Brigitte Bouesso' },
-      { subjectId: 'eps', subjectName: 'Éducation Physique (EPS)', coefficient: 1, score: 15, homeworkScore: 15, compositionScore: 15, teacherName: 'M. Paul Mavoungou' },
-      { subjectId: 'cond', subjectName: 'Conduite & Tenue', coefficient: 1, score: 17, homeworkScore: 17, compositionScore: 17, teacherName: 'M. Paul Mavoungou' },
+      { subjectId: 'fran', subjectName: 'Français & Orthographe', coefficient: 3, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'math', subjectName: 'Mathématiques & Problèmes', coefficient: 3, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'scie', subjectName: 'Sciences & Éveil', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'hg', subjectName: 'Histoire & Géographie', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'civ', subjectName: 'Éducation Civique & Morale', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'eps', subjectName: 'Éducation Physique (EPS)', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'cond', subjectName: 'Conduite & Tenue', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
     ];
   }
 
   if (normCycle.includes('lycée') || normClass.includes('seconde') || normClass.includes('première') || normClass.includes('terminale') || normClass.includes('tle')) {
     return [
-      { subjectId: 'math', subjectName: 'Mathématiques', coefficient: 5, score: 15.5, homeworkScore: 15, compositionScore: 15.8, teacherName: 'M. Aimé Loubaki' },
-      { subjectId: 'pc', subjectName: 'Sciences Physiques & Chimie', coefficient: 5, score: 16, homeworkScore: 15.5, compositionScore: 16.2, teacherName: 'M. Aimé Loubaki' },
-      { subjectId: 'svt', subjectName: 'Sciences de la Vie et de la Terre', coefficient: 5, score: 15, homeworkScore: 14.5, compositionScore: 15.2, teacherName: 'M. Aimé Loubaki' },
-      { subjectId: 'phil', subjectName: 'Philosophie & Français', coefficient: 2, score: 13.5, homeworkScore: 13, compositionScore: 13.8, teacherName: 'M. Serge Ngoma' },
-      { subjectId: 'hg', subjectName: 'Histoire-Géographie', coefficient: 2, score: 14, homeworkScore: 13.5, compositionScore: 14.2, teacherName: 'M. Serge Ngoma' },
-      { subjectId: 'ang', subjectName: 'Anglais', coefficient: 2, score: 15, homeworkScore: 14.5, compositionScore: 15.2, teacherName: 'M. Serge Ngoma' },
-      { subjectId: 'eps', subjectName: 'Éducation Physique (EPS)', coefficient: 1, score: 16.5, homeworkScore: 16.5, compositionScore: 16.5, teacherName: 'M. Paul Mavoungou' },
-      { subjectId: 'cond', subjectName: 'Conduite & Discipline', coefficient: 1, score: 17, homeworkScore: 17, compositionScore: 17, teacherName: 'M. Paul Mavoungou' },
+      { subjectId: 'math', subjectName: 'Mathématiques', coefficient: 5, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'pc', subjectName: 'Sciences Physiques & Chimie', coefficient: 5, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'svt', subjectName: 'Sciences de la Vie et de la Terre', coefficient: 5, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'phil', subjectName: 'Philosophie & Français', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'hg', subjectName: 'Histoire-Géographie', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'ang', subjectName: 'Anglais', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'eps', subjectName: 'Éducation Physique (EPS)', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+      { subjectId: 'cond', subjectName: 'Conduite & Discipline', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
     ];
   }
 
   // Default: Collège (6ème, 5ème, 4ème, 3ème)
   return [
-    { subjectId: 'math', subjectName: 'Mathématiques', coefficient: 4, score: 13, homeworkScore: 12.5, compositionScore: 13.2, teacherName: 'M. Aimé Loubaki' },
-    { subjectId: 'fran', subjectName: 'Français / Expression Écrite', coefficient: 4, score: 13.5, homeworkScore: 13, compositionScore: 13.8, teacherName: 'M. Serge Ngoma' },
-    { subjectId: 'svt', subjectName: 'Sciences de la Vie et de la Terre', coefficient: 2, score: 14, homeworkScore: 13.5, compositionScore: 14.2, teacherName: 'M. Aimé Loubaki' },
-    { subjectId: 'pc', subjectName: 'Sciences Physiques', coefficient: 2, score: 12.5, homeworkScore: 12, compositionScore: 12.8, teacherName: 'M. Aimé Loubaki' },
-    { subjectId: 'hg', subjectName: 'Histoire-Géographie', coefficient: 2, score: 13, homeworkScore: 12.5, compositionScore: 13.2, teacherName: 'M. Serge Ngoma' },
-    { subjectId: 'ang', subjectName: 'Anglais', coefficient: 2, score: 14.5, homeworkScore: 14, compositionScore: 14.8, teacherName: 'M. Serge Ngoma' },
-    { subjectId: 'eps', subjectName: 'Éducation Physique (EPS)', coefficient: 1, score: 15, homeworkScore: 15, compositionScore: 15, teacherName: 'M. Paul Mavoungou' },
-    { subjectId: 'cond', subjectName: 'Conduite & Assiduité', coefficient: 1, score: 16, homeworkScore: 16, compositionScore: 16, teacherName: 'M. Paul Mavoungou' },
+    { subjectId: 'math', subjectName: 'Mathématiques', coefficient: 4, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+    { subjectId: 'fran', subjectName: 'Français / Expression Écrite', coefficient: 4, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+    { subjectId: 'svt', subjectName: 'Sciences de la Vie et de la Terre', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+    { subjectId: 'pc', subjectName: 'Sciences Physiques', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+    { subjectId: 'hg', subjectName: 'Histoire-Géographie', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+    { subjectId: 'ang', subjectName: 'Anglais', coefficient: 2, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+    { subjectId: 'eps', subjectName: 'Éducation Physique (EPS)', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
+    { subjectId: 'cond', subjectName: 'Conduite & Assiduité', coefficient: 1, score: 0, homeworkScore: 0, compositionScore: 0, teacherName: '' },
   ];
 }
 
@@ -232,10 +232,28 @@ export function computeStudentReport(
 
   const council = getCouncilMention(targetEntry.average);
 
+  const enrichedGrades = targetEntry.grades.map((g) => {
+    const scoresInClass: number[] = [];
+    classAverages.forEach((ca) => {
+      const match = ca.grades.find(
+        (cg) => cg.subjectId === g.subjectId || cg.subjectName === g.subjectName
+      );
+      if (match) scoresInClass.push(match.score);
+    });
+    const subClassAvg =
+      scoresInClass.length > 0
+        ? Number((scoresInClass.reduce((a, b) => a + b, 0) / scoresInClass.length).toFixed(1))
+        : g.score;
+    return {
+      ...g,
+      classAverage: subClassAvg,
+    };
+  });
+
   return {
     studentId: student.id,
     term,
-    grades: targetEntry.grades,
+    grades: enrichedGrades,
     totalPoints: targetEntry.totalPoints,
     totalCoefficients: targetEntry.totalCoeff,
     generalAverage: targetEntry.average,
@@ -250,6 +268,54 @@ export function computeStudentReport(
     councilMention: council.mention,
     academicRemarks: student.academicRemarks || 'Élève régulier et attentif en classe.',
   };
+}
+
+// Synchronize ranks and totalStudentsInClass strictly for each class group
+export function syncStudentsRanksAndCounts(
+  students: Student[],
+  term: string = 'Trimestre 1',
+  config?: SchoolConfig
+): Student[] {
+  // Group students by class level
+  const classGroups = new Map<string, Student[]>();
+  students.forEach((s) => {
+    const key = (s.classLevel || 'Inconnue').toLowerCase().trim();
+    if (!classGroups.has(key)) classGroups.set(key, []);
+    classGroups.get(key)!.push(s);
+  });
+
+  const updatedStudents: Student[] = [];
+
+  classGroups.forEach((members) => {
+    const classSize = members.length;
+
+    // Compute live average for ranking
+    const evaluated = members.map((s) => {
+      const grades = getStudentGradesForTerm(s, term, config);
+      const { average } = calculateWeightedAverage(grades);
+      const effectiveGpa = average > 0 ? average : (s.gpa || 10);
+      return { student: s, score: effectiveGpa };
+    });
+
+    // Sort descending by score
+    evaluated.sort((a, b) => b.score - a.score);
+
+    // Assign rank strictly within this class
+    evaluated.forEach((item, index) => {
+      const rank = index + 1;
+      updatedStudents.push({
+        ...item.student,
+        gpa: item.score,
+        classRank: rank,
+        totalStudentsInClass: classSize,
+      });
+    });
+  });
+
+  // Preserve initial relative ordering
+  const idMap = new Map(students.map((s, idx) => [s.id, idx]));
+  updatedStudents.sort((a, b) => (idMap.get(a.id) ?? 0) - (idMap.get(b.id) ?? 0));
+  return updatedStudents;
 }
 
 // Generate preformatted WhatsApp text to notify parent about the report card

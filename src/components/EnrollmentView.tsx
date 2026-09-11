@@ -1177,15 +1177,15 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
             {/* Signature & Cachet */}
             <div className="pt-6 flex justify-between items-end text-xs">
               <div>
-                <p className="text-[10px] text-[#64748B]">Fait à {config?.schoolCity || 'Brazzaville'}, le {new Date().toLocaleDateString('fr-FR')}</p>
+                <p className="text-[10px] text-[#64748B]">Fait à {config?.schoolCity || 'la Direction'}, le {new Date().toLocaleDateString('fr-FR')}</p>
                 <div className="mt-8 font-bold">Le Secrétariat des Admissions</div>
               </div>
               <div className="text-right">
                 <div className="w-24 h-24 border-2 border-dashed border-black/30 rounded-full flex items-center justify-center text-[9px] uppercase font-bold text-black/40 rotate-[-12deg]">
                   Cachet Établissement
                 </div>
-                <div className="mt-2 font-bold">{config?.directorName || 'M. Gaston Bantsimba'}</div>
-                <div className="text-[10px] text-[#64748B]">Directeur Général</div>
+                <div className="mt-2 font-bold">{config?.directorName || 'La Direction'}</div>
+                <div className="text-[10px] text-[#64748B]">Direction de l'Établissement</div>
               </div>
             </div>
 

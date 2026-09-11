@@ -113,22 +113,17 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
     ...config,
     schoolName: config.schoolName || 'Complexe Scolaire Privé ADLON',
     schoolLogo: config.schoolLogo || '',
-    schoolMotto: config.schoolMotto || '« Rigueur - Discipline - Excellence »',
-    schoolAddress: config.schoolAddress || 'Bacongo, Brazzaville',
-    schoolCity: config.schoolCity || 'Brazzaville',
+    schoolMotto: config.schoolMotto || '',
+    schoolAddress: config.schoolAddress || '',
+    schoolCity: config.schoolCity || '',
     schoolCountry: config.schoolCountry || 'République du Congo',
-    schoolDepartment: config.schoolDepartment || 'Direction Départementale de Brazzaville',
-    schoolPhone: config.schoolPhone || '+242 06 611 22 33 / 05 544 33 22',
-    schoolEmail: config.schoolEmail || 'direction@adlon-school.cg',
-    directorName: config.directorName || 'M. Gaston Bantsimba',
-    ministerialApproval: config.ministerialApproval || 'Agrément Ministériel N° 2024/MEP-DGEP/CAB',
+    schoolDepartment: config.schoolDepartment || '',
+    schoolPhone: config.schoolPhone || '',
+    schoolEmail: config.schoolEmail || '',
+    directorName: config.directorName || '',
+    ministerialApproval: config.ministerialApproval || '',
     academicYear: config.academicYear || '2026-2027',
-    classes: config.classes || [
-      { id: 'cls-1', name: 'Petite Section (PS)', cycle: 'Préscolaire', monthlyTuition: 15000, mainTeacher: 'Mme Brigitte Bouesso', roomNumber: 'M01', maxCapacity: 20 },
-      { id: 'cls-2', name: 'CE2', cycle: 'Primaire', monthlyTuition: 18000, mainTeacher: 'Mme Brigitte Bouesso', roomNumber: 'P04', maxCapacity: 30 },
-      { id: 'cls-3', name: '3ème', cycle: 'Collège', monthlyTuition: 25000, mainTeacher: 'M. Aimé Loubaki', roomNumber: 'C04', maxCapacity: 35 },
-      { id: 'cls-4', name: 'Terminale D', cycle: 'Lycée', monthlyTuition: 35000, mainTeacher: 'M. Aimé Loubaki', roomNumber: 'L03', maxCapacity: 35 },
-    ],
+    classes: config.classes || [],
     classSubjects: config.classSubjects || {}
   }));
 
@@ -1094,7 +1089,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                       <label className="block text-[#64748B] dark:text-[#94A3B8] mb-1 font-medium text-[11px]">Enseignant Titulaire :</label>
                       <input
                         type="text"
-                        placeholder="Ex: M. Aimé Loubaki"
+                        placeholder="Ex: Titulaire de la classe"
                         value={newClassTeacher}
                         onChange={(e) => setNewClassTeacher(e.target.value)}
                         className="w-full p-2 bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] rounded-xl text-xs text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
@@ -1651,7 +1646,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                     type="text"
                     value={formData.directorName || ''}
                     onChange={(e) => setFormData({ ...formData, directorName: e.target.value })}
-                    placeholder="ex: M. Gaston Bantsimba"
+                    placeholder="ex: Le Directeur / La Directrice"
                     className="w-full p-2.5 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition-all"
                   />
                 </div>

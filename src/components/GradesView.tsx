@@ -25,8 +25,11 @@ import {
   Trophy,
   Filter,
   Info,
-  Edit3
+  Edit3,
+  Printer,
+  Download
 } from 'lucide-react';
+import { printReportCard, downloadReportCard } from '../utils/reportCardPrinter';
 import { ReportCardModal } from './ReportCardModal';
 
 interface GradesViewProps {
@@ -54,6 +57,7 @@ export const GradesView: React.FC<GradesViewProps> = ({
 
   // Active Report Card Modal
   const [activeReportStudent, setActiveReportStudent] = useState<Student | null>(null);
+  const [autoPrintReportModal, setAutoPrintReportModal] = useState<boolean>(false);
 
   // Active Student for Devoir/Composition modal editing
   const [editingStudentGrades, setEditingStudentGrades] = useState<Student | null>(null);
@@ -416,7 +420,7 @@ export const GradesView: React.FC<GradesViewProps> = ({
         <div className="space-y-4">
           {classStudents.map((student) => {
             const currentGrades = localGrades[student.id] || getDefaultSubjectsForClass(student.classLevel, student.cycle, config);
-            const rankInfo = liveRankMap.get(student.id) || { average: 12, rank: 1 };
+            const rankInfo = liveRankMap.get(student.id) || { average: 12, rank: 1, totalInClass: 1, totalPoints: 120, totalCoeff: 10 };
             const mention = getCouncilMention(rankInfo.average);
 
             return (
@@ -436,7 +440,7 @@ export const GradesView: React.FC<GradesViewProps> = ({
                         <span className="text-[11px] font-mono font-normal text-[#64748B]">({student.matricule})</span>
                       </h4>
                       <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-                        Classe : <strong className="text-slate-800 dark:text-slate-200">{student.classLevel}</strong> • Parent : {student.parentName || 'Non renseigné'}
+                        Classe : <strong className="text-slate-800 dark:text-slate-200">{student.classLevel}</strong> • Rang : <strong className="text-amber-600 dark:text-amber-400 font-bold font-mono">{rankInfo.rank === 1 ? '1er' : `${rankInfo.rank}ème`} / {rankInfo.totalInClass}</strong> • Parent : {student.parentName || 'Non renseigné'}
                       </p>
                     </div>
                   </div>
@@ -572,21 +576,47 @@ export const GradesView: React.FC<GradesViewProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-5 pt-3 border-t border-slate-200/80 dark:border-[#222F46]">
+                <div className="flex items-center gap-1.5 mt-5 pt-3 border-t border-slate-200/80 dark:border-[#222F46]">
                   <button
-                    onClick={() => setActiveReportStudent(student)}
-                    className="flex-1 py-2 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#0071E3] hover:bg-blue-100 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                    onClick={() => {
+                      setAutoPrintReportModal(false);
+                      setActiveReportStudent(student);
+                    }}
+                    className="flex-1 py-2 px-2.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#0071E3] hover:bg-blue-100 dark:hover:bg-blue-900/40 text-xs font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                    title="Ouvrir et prévisualiser le bulletin officiel"
                   >
                     <FileText className="w-3.5 h-3.5" />
-                    <span>Voir Bulletin</span>
+                    <span>Bulletin</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setAutoPrintReportModal(true);
+                      setActiveReportStudent(student);
+                    }}
+                    className="p-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors cursor-pointer"
+                    title="Imprimer directement ce bulletin officiel ou l'enregistrer en PDF"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const rep = computeStudentReport(student, students, selectedTerm, config);
+                      downloadReportCard(rep, student, config);
+                    }}
+                    className="p-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
+                    title="Télécharger le bulletin complet (.html prêt pour impression)"
+                  >
+                    <Download className="w-3.5 h-3.5" />
                   </button>
 
                   <button
                     onClick={() => handleQuickWhatsAppBulletin(student)}
-                    className="p-2 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a] transition-colors"
-                    title="Envoyer le bulletin sur WhatsApp"
+                    className="p-2 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a] transition-colors cursor-pointer"
+                    title="Envoyer le bulletin au parent sur WhatsApp"
                   >
-                    <Share2 className="w-4 h-4" />
+                    <Share2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -602,7 +632,11 @@ export const GradesView: React.FC<GradesViewProps> = ({
           allStudents={students}
           initialTerm={selectedTerm}
           config={config}
-          onClose={() => setActiveReportStudent(null)}
+          autoPrint={autoPrintReportModal}
+          onClose={() => {
+            setActiveReportStudent(null);
+            setAutoPrintReportModal(false);
+          }}
           onSelectStudent={(st) => setActiveReportStudent(st)}
         />
       )}
