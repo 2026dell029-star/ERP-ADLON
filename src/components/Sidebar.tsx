@@ -28,7 +28,7 @@ interface SidebarProps {
   setActiveTab: (tab: NavigationTab) => void;
   isOpen: boolean;
   onClose: () => void;
-  activeUsersCount: number;
+  activeUsersCount?: number;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   config?: SchoolConfig;
@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'finance',
-      label: 'Finances & Prorata',
+      label: 'Finances & Caisses',
       icon: CreditCard,
     },
     {

@@ -8,64 +8,65 @@ export function generatePrintableReportHtml(
   autoPrint: boolean = false
 ): string {
   const schoolName = config?.schoolName || 'Établissement Scolaire';
-  const schoolMotto = config?.schoolMotto || '';
-  const schoolCity = config?.schoolCity || '';
-  const schoolCountry = config?.schoolCountry || '';
-  const schoolDepartment = config?.schoolDepartment || '';
+  const schoolMotto = config?.schoolMotto || 'Discipline - Travail - Succès';
+  const schoolCity = config?.schoolCity || 'Brazzaville';
+  const schoolCountry = config?.schoolCountry || 'République du Congo';
+  const schoolDepartment = config?.schoolDepartment || "Département de l'Enseignement de Brazzaville";
   const schoolPhone = config?.schoolPhone || '';
   const academicYear = config?.academicYear || '2026-2027';
   const directorName = config?.directorName || 'La Direction';
-  const approval = config?.ministerialApproval || '';
+  const approval = config?.ministerialApproval || "Agrément Ministériel N° MEPSA/CAB/SG/DGEP";
+  const schoolAddress = config?.schoolAddress || '';
 
   const rows = report.grades
     .map((g, index) => {
       const points = Number((g.score * g.coefficient).toFixed(2));
-      const isPassing = g.score >= 10;
       const isGood = g.score >= 14;
-      const isWeak = g.score < 10;
+      const isAverage = g.score >= 10 && g.score < 14;
+      const isWeak = g.score > 0 && g.score < 10;
 
-      const scoreColor = isGood ? '#047857' : isWeak ? '#b91c1c' : '#1d4ed8';
-      const scoreBg = isGood ? '#ecfdf5' : isWeak ? '#fef2f2' : '#eff6ff';
+      const scoreColor = isGood ? '#047857' : isWeak ? '#b91c1c' : isAverage ? '#1d4ed8' : '#334155';
+      const scoreBg = isGood ? '#ecfdf5' : isWeak ? '#fef2f2' : isAverage ? '#eff6ff' : '#f8fafc';
 
       const remark =
         g.teacherRemark ||
         (g.score >= 16
-          ? 'Excellent travail, assimilation remarquable des notions.'
+          ? 'Excellent travail, notions parfaitement assimilées.'
           : g.score >= 14
-          ? 'Très bon travail, élève appliqué et participatif.'
+          ? 'Très bon travail, élève consciencieux et appliqué.'
           : g.score >= 12
-          ? 'Travail satisfaisant, poursuivez ainsi vos efforts.'
+          ? 'Travail satisfaisant, poursuivez vos efforts réguliers.'
           : g.score >= 10
-          ? 'Résultats convenables mais des progrès sont possibles.'
-          : g.score >= 8
-          ? 'Ensemble insuffisant, travail et révisions à intensifier.'
-          : 'Très insuffisant. Réaction et encadrement impératifs.');
+          ? 'Moyenne atteinte, peut mieux faire en s\'investissant.'
+          : g.score > 0
+          ? 'Résultats insuffisants, révisions et rigueur requises.'
+          : 'Non noté pour cette période.');
 
-      const bgRow = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+      const bgRow = index % 2 === 0 ? '#ffffff' : '#fcfcfd';
 
       return `
         <tr style="background-color: ${bgRow};">
-          <td style="padding: 6px 10px; border: 1px solid #1e293b; font-weight: 700; color: #0f172a; font-size: 11.5px;">
+          <td style="padding: 6px 10px; border: 1px solid #1e293b; font-weight: 700; color: #0f172a; font-size: 11px;">
             ${g.subjectName}
           </td>
-          <td style="padding: 6px 8px; border: 1px solid #1e293b; font-size: 10.5px; color: #475569;">
+          <td style="padding: 6px 8px; border: 1px solid #1e293b; font-size: 10px; color: #475569;">
             ${g.teacherName || 'Enseignant Titulaire'}
           </td>
           <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center;">
-            <span style="display: inline-block; padding: 2px 7px; background-color: ${scoreBg}; color: ${scoreColor}; font-weight: 800; font-family: 'Courier New', monospace; font-size: 12.5px; border-radius: 4px; border: 1px solid ${scoreColor}33;">
+            <span style="display: inline-block; padding: 2px 6px; background-color: ${scoreBg}; color: ${scoreColor}; font-weight: 800; font-family: 'Courier New', monospace; font-size: 12px; border-radius: 4px; border: 1px solid ${scoreColor}33;">
               ${g.score.toFixed(1)}
             </span>
           </td>
-          <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center; font-family: monospace; font-size: 11.5px; font-weight: 600;">
+          <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center; font-family: monospace; font-size: 11px; font-weight: 600;">
             ${g.coefficient}
           </td>
-          <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center; font-weight: 800; font-family: monospace; font-size: 12px; color: #0f172a;">
+          <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center; font-weight: 800; font-family: monospace; font-size: 11.5px; color: #0f172a;">
             ${points.toFixed(1)}
           </td>
-          <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center; font-family: monospace; font-size: 11px; color: #64748b;">
+          <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center; font-family: monospace; font-size: 10.5px; color: #64748b;">
             ${g.classAverage ? g.classAverage.toFixed(1) : '—'}
           </td>
-          <td style="padding: 6px 10px; border: 1px solid #1e293b; font-size: 10.5px; font-style: italic; color: #334155; line-height: 1.3;">
+          <td style="padding: 6px 10px; border: 1px solid #1e293b; font-size: 10px; font-style: italic; color: #334155; line-height: 1.3;">
             ${remark}
           </td>
         </tr>
@@ -92,10 +93,10 @@ export function generatePrintableReportHtml(
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       color: #0f172a;
-      background: #e2e8f0;
+      background: #f1f5f9;
       margin: 0;
       padding: 16px;
-      font-size: 11.5px;
+      font-size: 11px;
       line-height: 1.35;
     }
     .print-actions-bar {
@@ -122,7 +123,7 @@ export function generatePrintableReportHtml(
       background: #0071e3;
       color: #ffffff;
       border: none;
-      padding: 7px 16px;
+      padding: 8px 18px;
       font-size: 12.5px;
       font-weight: 700;
       border-radius: 8px;
@@ -139,7 +140,7 @@ export function generatePrintableReportHtml(
       background: #334155;
       color: #f8fafc;
       border: 1px solid #475569;
-      padding: 7px 14px;
+      padding: 8px 14px;
       font-size: 12px;
       font-weight: 600;
       border-radius: 8px;
@@ -161,7 +162,7 @@ export function generatePrintableReportHtml(
         border: 2px solid #000000 !important;
         margin: 0 !important;
         max-width: 100% !important;
-        padding: 5mm !important;
+        padding: 4mm 5mm !important;
       }
     }
     .bulletin-sheet {
@@ -171,16 +172,18 @@ export function generatePrintableReportHtml(
       background: #ffffff;
       border: 2px solid #0f172a;
       border-radius: 4px;
-      padding: 22px 26px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      padding: 18px 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       position: relative;
     }
     /* Congolese Flag Ribbon */
     .congo-tricolor {
       display: flex;
-      height: 4px;
+      height: 5px;
       width: 100%;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      border-radius: 2px;
+      overflow: hidden;
     }
     .congo-green { flex: 1; background-color: #009543; }
     .congo-yellow { flex: 1; background-color: #fbde4a; }
@@ -190,7 +193,7 @@ export function generatePrintableReportHtml(
       display: table;
       width: 100%;
       border-bottom: 2px solid #0f172a;
-      padding-bottom: 10px;
+      padding-bottom: 8px;
       margin-bottom: 8px;
     }
     .header-cell {
@@ -218,7 +221,7 @@ export function generatePrintableReportHtml(
       padding: 6px 12px;
       text-align: left;
       border-radius: 6px;
-      font-size: 10.5px;
+      font-size: 10px;
       line-height: 1.4;
     }
     .school-title {
@@ -230,13 +233,13 @@ export function generatePrintableReportHtml(
       margin: 2px 0 1px 0;
     }
     .school-motto {
-      font-size: 10px;
+      font-size: 9.5px;
       font-style: italic;
       color: #0284c7;
       font-weight: 700;
     }
     .school-meta {
-      font-size: 9.5px;
+      font-size: 9px;
       color: #64748b;
       margin-top: 1px;
     }
@@ -245,34 +248,34 @@ export function generatePrintableReportHtml(
       color: #ffffff;
       text-align: center;
       padding: 6px 10px;
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 900;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       border-radius: 4px;
-      margin: 10px 0;
+      margin: 8px 0;
     }
     .student-panel {
       border: 1.5px solid #1e293b;
       background: #f8fafc;
       border-radius: 6px;
-      padding: 10px 14px;
-      margin-bottom: 12px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
     }
     .student-grid {
       display: grid;
-      grid-template-columns: 2.2fr 1fr 1.4fr 1.4fr;
-      gap: 10px;
-      margin-bottom: 8px;
+      grid-template-columns: 2fr 1fr 1.3fr 1.2fr;
+      gap: 8px;
+      margin-bottom: 6px;
     }
     .sub-meta-grid {
       display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr 1fr;
-      gap: 10px;
-      padding-top: 8px;
-      border-top: 1px dashed #94a3b8;
+      grid-template-columns: 1.4fr 1fr 1fr 1fr;
+      gap: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed #cbd5e1;
       align-items: center;
-      font-size: 10.5px;
+      font-size: 10px;
     }
     .rank-pill {
       display: inline-block;
@@ -282,12 +285,12 @@ export function generatePrintableReportHtml(
       font-weight: 900;
       padding: 2px 8px;
       border-radius: 6px;
-      font-size: 11px;
+      font-size: 10.5px;
     }
     .grades-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .grades-table th {
       background: #1e293b;
@@ -295,45 +298,45 @@ export function generatePrintableReportHtml(
       border: 1px solid #1e293b;
       padding: 6px 8px;
       font-weight: 800;
-      font-size: 10.5px;
+      font-size: 10px;
       text-transform: uppercase;
     }
     .summary-section {
       display: grid;
       grid-template-columns: 1.1fr 1fr;
-      gap: 12px;
-      margin-bottom: 12px;
+      gap: 10px;
+      margin-bottom: 10px;
     }
     .summary-card {
       border: 1.5px solid #1e293b;
       border-radius: 6px;
-      padding: 10px 14px;
+      padding: 8px 12px;
       background: #ffffff;
     }
     .summary-title {
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 800;
       text-transform: uppercase;
       color: #0f172a;
       border-bottom: 1.5px solid #e2e8f0;
       padding-bottom: 4px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
     }
     .signatures-panel {
       display: grid;
       grid-template-columns: 1fr 1fr 1.15fr;
-      gap: 12px;
-      margin-top: 10px;
-      padding-top: 10px;
+      gap: 10px;
+      margin-top: 8px;
+      padding-top: 8px;
       border-top: 1.5px solid #0f172a;
     }
     .sig-box {
       border: 1.5px solid #1e293b;
       border-radius: 6px;
       padding: 8px 10px;
-      height: 98px;
+      min-height: 88px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -344,39 +347,39 @@ export function generatePrintableReportHtml(
     .stamp-mockup {
       position: absolute;
       right: 12px;
-      bottom: 10px;
-      width: 60px;
-      height: 60px;
+      bottom: 8px;
+      width: 58px;
+      height: 58px;
       border: 1.5px dashed #0284c7;
       border-radius: 50%;
       color: #0284c7;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 7.5px;
+      font-size: 7px;
       font-weight: 900;
       text-align: center;
       text-transform: uppercase;
-      opacity: 0.65;
+      opacity: 0.7;
       transform: rotate(-10deg);
       pointer-events: none;
     }
     .footer-note {
       text-align: center;
-      font-size: 9px;
+      font-size: 8.5px;
       color: #64748b;
-      margin-top: 10px;
+      margin-top: 8px;
       border-top: 1px dotted #cbd5e1;
-      padding-top: 6px;
+      padding-top: 4px;
     }
   </style>
 </head>
 <body>
   <div class="print-actions-bar">
-    <span>📑 Bulletin Scolaire Officiel • ${student.firstName} ${student.lastName} (${student.classLevel})</span>
+    <span>📑 Bulletin Officiel de Notes • ${student.firstName} ${student.lastName} (${student.classLevel})</span>
     <div class="btn-group">
       <button class="btn-print" onclick="window.print()">
-        🖨️ Imprimer / Enregistrer en PDF
+        🖨️ Lancer l'Impression / Enregistrer en PDF
       </button>
       <button class="btn-secondary" onclick="window.close()">
         Fermer
@@ -395,25 +398,29 @@ export function generatePrintableReportHtml(
     <!-- Institutional Header -->
     <div class="header-layout">
       <div class="header-cell header-left">
-        <strong style="font-size: 11px; text-transform: uppercase; color: #0f172a; display: block;">${schoolCountry.toUpperCase()}</strong>
-        <em style="font-size: 9px; color: #475569; display: block; margin-bottom: 2px;">Unité - Travail - Progrès</em>
+        <strong style="font-size: 10.5px; text-transform: uppercase; color: #0f172a; display: block;">${schoolCountry.toUpperCase()}</strong>
+        <em style="font-size: 8.5px; color: #475569; display: block; margin-bottom: 2px;">Unité - Travail - Progrès</em>
         <span>Ministère de l'Enseignement Primaire, Secondaire et de l'Alphabétisation</span><br>
         <strong>${schoolDepartment}</strong><br>
-        <span style="font-size: 8.5px; color: #64748b;">${approval}</span>
+        <span style="font-size: 8px; color: #64748b;">${approval}</span>
       </div>
 
       <div class="header-cell header-center">
-        <div style="font-size: 18px; margin-bottom: 1px;">🎓</div>
+        ${
+          config?.schoolLogo
+            ? `<div style="margin-bottom: 2px;"><img src="${config.schoolLogo}" alt="Logo" style="max-height: 42px; max-width: 90px; object-fit: contain; display: inline-block;"></div>`
+            : `<div style="font-size: 18px; margin-bottom: 1px;">🎓</div>`
+        }
         <div class="school-title">${schoolName}</div>
         <div class="school-motto">${schoolMotto}</div>
-        <div class="school-meta">${schoolCity} • Tél: ${schoolPhone}</div>
+        <div class="school-meta">${schoolCity} ${schoolAddress ? `• ${schoolAddress}` : ''} ${schoolPhone ? `• Tél: ${schoolPhone}` : ''}</div>
       </div>
 
       <div class="header-cell header-right">
         <div class="cadre-session">
-          <div><span style="color: #64748b; font-size: 9.5px; font-weight: 700;">ANNÉE SCOLAIRE :</span> <strong>${academicYear}</strong></div>
-          <div><span style="color: #64748b; font-size: 9.5px; font-weight: 700;">PÉRIODE :</span> <strong style="color: #0071e3; text-transform: uppercase;">${report.term}</strong></div>
-          <div style="font-size: 9px; color: #64748b; margin-top: 1px;">Édité le ${new Date().toLocaleDateString('fr-FR')}</div>
+          <div><span style="color: #64748b; font-size: 9px; font-weight: 700;">ANNÉE SCOLAIRE :</span> <strong>${academicYear}</strong></div>
+          <div><span style="color: #64748b; font-size: 9px; font-weight: 700;">PÉRIODE :</span> <strong style="color: #0071e3; text-transform: uppercase;">${report.term}</strong></div>
+          <div style="font-size: 8.5px; color: #64748b; margin-top: 1px;">Édité le ${new Date().toLocaleDateString('fr-FR')}</div>
         </div>
       </div>
     </div>
@@ -427,19 +434,19 @@ export function generatePrintableReportHtml(
     <div class="student-panel">
       <div class="student-grid">
         <div>
-          <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block;">Nom & Prénoms :</span>
-          <strong style="font-size: 13.5px; color: #0f172a;">${student.firstName} ${student.lastName}</strong>
+          <span style="font-size: 8.5px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block;">Nom & Prénoms :</span>
+          <strong style="font-size: 13px; color: #0f172a;">${student.firstName} ${student.lastName}</strong>
         </div>
         <div>
-          <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block;">Matricule :</span>
-          <strong style="font-family: monospace; font-size: 12px; color: #0f172a;">${student.matricule}</strong>
+          <span style="font-size: 8.5px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block;">Matricule :</span>
+          <strong style="font-family: monospace; font-size: 11.5px; color: #0f172a;">${student.matricule}</strong>
         </div>
         <div>
-          <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block;">Classe & Cycle :</span>
+          <span style="font-size: 8.5px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block;">Classe & Cycle :</span>
           <strong style="color: #0f172a;">${student.classLevel} (${student.cycle})</strong>
         </div>
         <div>
-          <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block;">Effectif Classe :</span>
+          <span style="font-size: 8.5px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block;">Effectif Classe :</span>
           <strong style="color: #0f172a; font-family: monospace;">${report.totalStudents} élèves</strong>
         </div>
       </div>
@@ -455,7 +462,7 @@ export function generatePrintableReportHtml(
           <strong style="font-family: monospace; margin-left: 3px;">${report.conductScore} / 20</strong>
         </div>
         <div>
-          <span style="color: #64748b;">Absences injustifiées :</span>
+          <span style="color: #64748b;">Absences non justifiées :</span>
           <strong style="color: ${report.unexcusedAbsences > 0 ? '#b91c1c' : '#0f172a'}; font-family: monospace; margin-left: 3px;">
             ${report.unexcusedAbsences} j
           </strong>
@@ -472,11 +479,11 @@ export function generatePrintableReportHtml(
       <thead>
         <tr>
           <th style="text-align: left;">Discipline / Matière</th>
-          <th style="text-align: left; width: 140px;">Enseignant Titulaire</th>
-          <th style="text-align: center; width: 75px;">Note /20</th>
-          <th style="text-align: center; width: 50px;">Coeff</th>
-          <th style="text-align: center; width: 75px;">Points</th>
-          <th style="text-align: center; width: 75px;">Moy. Cl.</th>
+          <th style="text-align: left; width: 130px;">Enseignant Titulaire</th>
+          <th style="text-align: center; width: 70px;">Note /20</th>
+          <th style="text-align: center; width: 45px;">Coeff</th>
+          <th style="text-align: center; width: 70px;">Points</th>
+          <th style="text-align: center; width: 70px;">Moy. Cl.</th>
           <th style="text-align: left;">Appréciation de l'Enseignant</th>
         </tr>
       </thead>
@@ -485,19 +492,19 @@ export function generatePrintableReportHtml(
       </tbody>
       <tfoot>
         <tr style="background: #1e293b; color: #ffffff; font-weight: 800; border-top: 2px solid #0f172a;">
-          <td colspan="3" style="padding: 7px 10px; border: 1px solid #1e293b; text-transform: uppercase; font-size: 11px;">
+          <td colspan="3" style="padding: 6px 10px; border: 1px solid #1e293b; text-transform: uppercase; font-size: 10.5px;">
             TOTAUX GÉNÉRAUX DU TRIMESTRE
           </td>
-          <td style="padding: 7px 8px; border: 1px solid #1e293b; text-align: center; font-family: monospace; font-size: 12px;">
+          <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center; font-family: monospace; font-size: 11.5px;">
             ${report.totalCoefficients}
           </td>
-          <td style="padding: 7px 8px; border: 1px solid #1e293b; text-align: center; font-family: monospace; font-size: 13px; color: #38bdf8;">
+          <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center; font-family: monospace; font-size: 12.5px; color: #38bdf8;">
             ${report.totalPoints.toFixed(1)} pts
           </td>
-          <td style="padding: 7px 8px; border: 1px solid #1e293b; text-align: center; font-size: 10.5px; color: #94a3b8;">
+          <td style="padding: 6px 8px; border: 1px solid #1e293b; text-align: center; font-size: 10px; color: #94a3b8;">
             —
           </td>
-          <td style="padding: 7px 10px; border: 1px solid #1e293b; font-size: 10px; color: #cbd5e1;">
+          <td style="padding: 6px 10px; border: 1px solid #1e293b; font-size: 9.5px; color: #cbd5e1;">
             Points max possibles : ${(report.totalCoefficients * 20).toFixed(0)} pts
           </td>
         </tr>
@@ -512,17 +519,17 @@ export function generatePrintableReportHtml(
           <span>Bilan Académique de l'Élève</span>
           <span style="color: #0071e3; font-weight: 800;">${report.term}</span>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
           <span style="font-weight: 700; color: #334155;">MOYENNE GÉNÉRALE :</span>
-          <span style="font-size: 20px; font-weight: 900; font-family: 'Courier New', monospace; color: #0071e3;">
+          <span style="font-size: 18px; font-weight: 900; font-family: 'Courier New', monospace; color: #0071e3;">
             ${report.generalAverage.toFixed(2)} / 20
           </span>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 10.5px;">
           <span style="color: #475569;">Rang Officiel de la Classe :</span>
-          <strong style="color: #b45309; font-size: 12px;">${formatRank(report.classRank)} sur ${report.totalStudents} élèves</strong>
+          <strong style="color: #b45309; font-size: 11.5px;">${formatRank(report.classRank)} sur ${report.totalStudents} élèves</strong>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px;">
           <span style="color: #475569;">Mention du Conseil de Classe :</span>
           <strong style="color: #047857;">${report.councilMention}</strong>
         </div>
@@ -534,21 +541,21 @@ export function generatePrintableReportHtml(
           <span>Repères Pédagogiques de la Classe</span>
           <span style="color: #64748b;">${student.classLevel}</span>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; text-align: center; margin-bottom: 8px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; text-align: center; margin-bottom: 6px;">
           <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 4px 2px; border-radius: 4px;">
-            <span style="font-size: 9px; color: #64748b; display: block;">Moyenne Classe</span>
-            <strong style="font-size: 13px; font-family: monospace;">${report.classAverage.toFixed(2)}</strong>
+            <span style="font-size: 8.5px; color: #64748b; display: block;">Moyenne Classe</span>
+            <strong style="font-size: 12px; font-family: monospace;">${report.classAverage.toFixed(2)}</strong>
           </div>
           <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 4px 2px; border-radius: 4px;">
-            <span style="font-size: 9px; color: #047857; display: block;">Plus Forte</span>
-            <strong style="font-size: 13px; font-family: monospace; color: #047857;">${report.highestAverage.toFixed(2)}</strong>
+            <span style="font-size: 8.5px; color: #047857; display: block;">Plus Forte</span>
+            <strong style="font-size: 12px; font-family: monospace; color: #047857;">${report.highestAverage.toFixed(2)}</strong>
           </div>
           <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 4px 2px; border-radius: 4px;">
-            <span style="font-size: 9px; color: #b91c1c; display: block;">Plus Faible</span>
-            <strong style="font-size: 13px; font-family: monospace; color: #b91c1c;">${report.lowestAverage.toFixed(2)}</strong>
+            <span style="font-size: 8.5px; color: #b91c1c; display: block;">Plus Faible</span>
+            <strong style="font-size: 12px; font-family: monospace; color: #b91c1c;">${report.lowestAverage.toFixed(2)}</strong>
           </div>
         </div>
-        <div style="font-size: 10px; color: #334155; line-height: 1.35; padding-top: 4px; border-top: 1px dashed #cbd5e1;">
+        <div style="font-size: 9.5px; color: #334155; line-height: 1.3; padding-top: 3px; border-top: 1px dashed #cbd5e1;">
           <strong>Observation de la Direction :</strong> <em>${report.academicRemarks}</em>
         </div>
       </div>
@@ -557,28 +564,28 @@ export function generatePrintableReportHtml(
     <!-- Official Signatures & Stamp -->
     <div class="signatures-panel">
       <div class="sig-box">
-        <strong style="font-size: 10.5px; color: #0f172a;">Le Parent ou Tuteur Légal</strong>
-        <span style="font-size: 8.5px; color: #64748b; font-style: italic;">Date, mention « Lu et approuvé » & signature</span>
+        <strong style="font-size: 10px; color: #0f172a;">Le Parent ou Tuteur Légal</strong>
+        <span style="font-size: 8px; color: #64748b; font-style: italic;">Date, mention « Lu et approuvé » & signature</span>
       </div>
       <div class="sig-box">
-        <strong style="font-size: 10.5px; color: #0f172a;">Le Professeur Principal</strong>
-        <span style="font-size: 8.5px; color: #64748b; font-style: italic;">Visa & Observations complémentaires</span>
+        <strong style="font-size: 10px; color: #0f172a;">Le Professeur Principal</strong>
+        <span style="font-size: 8px; color: #64748b; font-style: italic;">Visa & Observations complémentaires</span>
       </div>
       <div class="sig-box">
         <div>
-          <strong style="font-size: 10.5px; color: #0f172a;">Le Chef d'Établissement</strong><br>
-          <span style="font-size: 9.5px; font-weight: 700; color: #0071e3;">${directorName}</span>
+          <strong style="font-size: 10px; color: #0f172a;">Le Chef d'Établissement</strong><br>
+          <span style="font-size: 9px; font-weight: 700; color: #0071e3;">${directorName}</span>
         </div>
         <div class="stamp-mockup">
           DIRECTION<br>ADLON<br>BRAZZA
         </div>
-        <span style="font-size: 8.5px; color: #64748b; font-style: italic;">Cachet Officiel & Signature</span>
+        <span style="font-size: 8px; color: #64748b; font-style: italic;">Cachet Officiel & Signature</span>
       </div>
     </div>
 
     <!-- Regulatory Footer -->
     <div class="footer-note">
-      Document officiel délivré par le ${schoolName} • Conforme aux dispositions pédagogiques du Ministère • Fait à ${schoolCity} le ${new Date().toLocaleDateString('fr-FR')} • Réf : ADL-${student.matricule}-${report.term.replace(/\s+/g, '')}
+      Document officiel certifié conforme • ${schoolName} • Conforme aux dispositions pédagogiques du Ministère • Fait à ${schoolCity} le ${new Date().toLocaleDateString('fr-FR')} • Réf : ADL-${student.matricule}-${report.term.replace(/\s+/g, '')}
     </div>
   </div>
 
@@ -599,8 +606,9 @@ export function generatePrintableReportHtml(
 
 /**
  * Direct print trigger from the application.
- * If the on-screen printable element exists in DOM, it launches native window.print().
- * If not, or if blocked by iframe security, it opens a dedicated tab with auto-print.
+ * Uses a dedicated hidden iframe to trigger the native browser print dialog
+ * specifically for the official bulletin document.
+ * Falls back seamlessly to opening in a new printable tab if iframe printing is restricted.
  */
 export function printReportCard(
   report: StudentTermReport,
@@ -608,18 +616,58 @@ export function printReportCard(
   config?: SchoolConfig
 ): void {
   try {
-    // Check if the current document contains the bulletin element
-    const el = document.getElementById('printable-official-bulletin');
-    if (el) {
-      window.print();
-      return;
-    }
-  } catch (err) {
-    console.warn('Native in-app print encountered an error, falling back to new tab', err);
-  }
+    const html = generatePrintableReportHtml(report, student, config, false);
+    
+    // Create an invisible iframe to host the print document
+    const iframe = document.createElement('iframe');
+    iframe.id = 'bulletin-print-iframe';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'hidden';
+    iframe.style.zIndex = '-9999';
+    document.body.appendChild(iframe);
 
-  // Fallback: open dedicated printable tab
-  openPrintableReportInNewTab(report, student, config, true);
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (!doc) {
+      throw new Error('Unable to access print iframe document');
+    }
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    const cleanup = () => {
+      setTimeout(() => {
+        try {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+        } catch {
+          // ignore
+        }
+      }, 1000);
+    };
+
+    // Allow resources to render, then print
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        cleanup();
+      } catch (err) {
+        console.warn('Iframe print failed, opening in printable tab', err);
+        cleanup();
+        openPrintableReportInNewTab(report, student, config, true);
+      }
+    }, 400);
+  } catch (err) {
+    console.warn('Direct print error, falling back to new tab', err);
+    openPrintableReportInNewTab(report, student, config, true);
+  }
 }
 
 /**

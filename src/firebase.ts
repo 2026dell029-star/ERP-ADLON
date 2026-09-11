@@ -12,7 +12,7 @@ import {
   User,
 } from 'firebase/auth';
 import {
-  getFirestore,
+  initializeFirestore,
   doc,
   getDocFromServer,
 } from 'firebase/firestore';
@@ -30,7 +30,9 @@ export const firebaseConfig = {
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+});
 export const googleProvider = new GoogleAuthProvider();
 
 export enum OperationType {

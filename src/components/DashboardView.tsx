@@ -1,7 +1,6 @@
-import React from 'react';
-import { SchoolConfig, Student, UserStats, NavigationTab } from '../types';
+import React, { useState } from 'react';
+import { SchoolConfig, Student, StaffMember, UserStats, NavigationTab } from '../types';
 import { formatFCFA, cleanPhoneNumber } from '../utils/formatters';
-import { UserStatsSection } from './UserStatsSection';
 import { 
   Wallet, 
   MessageCircle, 
@@ -11,37 +10,57 @@ import {
   UserX,
   GraduationCap,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  SlidersHorizontal,
+  Users2,
+  X,
+  Save,
+  DollarSign
 } from 'lucide-react';
 
 interface DashboardViewProps {
   config: SchoolConfig;
   students: Student[];
-  userStats: UserStats;
+  staff?: StaffMember[];
+  userStats?: UserStats;
   onOpenWhatsApp: (student: Student) => void;
   onOpenStudentDetail: (student: Student) => void;
   onOpenPayment: (student: Student) => void;
   onNavigateTab: (tab: NavigationTab) => void;
+  onUpdateConfig?: (updatedConfig: SchoolConfig) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   config,
   students,
-  userStats,
+  staff = [],
   onOpenWhatsApp,
   onOpenStudentDetail,
   onOpenPayment,
   onNavigateTab,
+  onUpdateConfig,
 }) => {
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [formBankCash, setFormBankCash] = useState<number>(config.availableBankCash || 0);
+  const [formPayroll, setFormPayroll] = useState<number>(config.monthlyFixedPayroll || 0);
+
   const totalDue = students.reduce((acc, s) => acc + s.totalDue, 0);
   const totalPaid = students.reduce((acc, s) => acc + s.totalPaid, 0);
   const totalBalance = students.reduce((acc, s) => acc + s.balanceRemaining, 0);
   const recoveryRate = totalDue > 0 ? (totalPaid / totalDue) * 100 : 0;
 
-  const cashGap = config.availableBankCash - config.monthlyFixedPayroll;
-  const isDeficit = config.monthlyFixedPayroll > 0 && cashGap < 0;
-  const coveragePct = config.monthlyFixedPayroll > 0 
-    ? Math.round((config.availableBankCash / config.monthlyFixedPayroll) * 100) 
+  // Real payroll: derived from staff list if members exist, or from config if explicitly set
+  const staffPayroll = (staff || []).reduce((acc, s) => acc + (s.monthlySalary || 0), 0);
+  const effectivePayroll = config.monthlyFixedPayroll > 0 ? config.monthlyFixedPayroll : staffPayroll;
+  
+  // Real treasury: availableBankCash in config (defaults to 0 for a pristine, clean setup)
+  const effectiveCash = config.availableBankCash || 0;
+
+  const cashGap = effectiveCash - effectivePayroll;
+  const isZeroState = effectivePayroll === 0 && effectiveCash === 0;
+  const isDeficit = effectivePayroll > 0 && cashGap < 0;
+  const coveragePct = effectivePayroll > 0 
+    ? Math.round((effectiveCash / effectivePayroll) * 100) 
     : 100;
 
   const topUnpaid = [...students]
@@ -51,6 +70,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const meetingAlerts = students.filter(
     (s) => s.parentMeetingAbsences >= config.parentAbsenceAlertThreshold
   );
+
+  const handleOpenAdjustModal = () => {
+    setFormBankCash(config.availableBankCash || 0);
+    setFormPayroll(config.monthlyFixedPayroll || 0);
+    setIsAdjustModalOpen(true);
+  };
+
+  const handleSaveTreasurySettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onUpdateConfig) return;
+    const updated: SchoolConfig = {
+      ...config,
+      availableBankCash: Number(formBankCash) || 0,
+      monthlyFixedPayroll: Number(formPayroll) || 0,
+    };
+    onUpdateConfig(updated);
+    setIsAdjustModalOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -63,24 +100,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="space-y-2.5 max-w-2xl">
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur-md border border-white/20 text-blue-100 flex items-center gap-1.5 shadow-2xs">
-                <span className={`w-2 h-2 rounded-full ${isDeficit ? 'bg-amber-300' : 'bg-emerald-400'}`}></span>
-                {isDeficit ? 'Attention Trésorerie Requise' : 'Trésorerie Équilibrée'}
+                <span className={`w-2 h-2 rounded-full ${isZeroState ? 'bg-sky-300' : isDeficit ? 'bg-amber-300' : 'bg-emerald-400'}`}></span>
+                {isZeroState ? 'Données Vierge (0 FCFA)' : isDeficit ? 'Attention Trésorerie Requise' : 'Trésorerie Équilibrée'}
               </span>
               <span className="text-xs text-blue-200/80">
                 Année Scolaire {config.academicYear || '2026-2027'} ({config.schoolDurationMonths || 10} mois)
               </span>
             </div>
 
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-white">
-              Trésorerie Disponible vs Masse Salariale
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
+              <span>Trésorerie Disponible vs Masse Salariale</span>
             </h2>
 
             <p className="text-xs sm:text-sm text-blue-100/85 leading-relaxed">
-              {config.monthlyFixedPayroll === 0 && config.availableBankCash === 0 ? (
-                <span>Trésorerie et masse salariale prêtes à être configurées selon la réalité financière de votre école.</span>
+              {isZeroState ? (
+                <span>
+                  Trésorerie et masse salariale à <strong>0 FCFA</strong> (aucune simulation active). Dès que vous enregistrerez des paiements d'élèves ou ajouterez vos collaborateurs dans l'onglet Personnel, ces indicateurs s'actualiseront automatiquement.
+                </span>
               ) : (
                 <>
-                  La trésorerie en banque s'élève à <strong className="text-white font-mono font-bold">{formatFCFA(config.availableBankCash)}</strong> face à une masse salariale fixe de <strong className="text-white font-mono font-bold">{formatFCFA(config.monthlyFixedPayroll)}</strong>.
+                  La trésorerie en banque s'élève à <strong className="text-white font-mono font-bold">{formatFCFA(effectiveCash)}</strong> face à une masse salariale fixe de <strong className="text-white font-mono font-bold">{formatFCFA(effectivePayroll)}</strong>.
                   {isDeficit ? (
                     <span className="text-amber-200 font-semibold block sm:inline sm:ml-1">
                       Écart de {formatFCFA(Math.abs(cashGap))}. Déclenchez la relance WhatsApp du Top Impayés pour sécuriser les salaires.
@@ -100,22 +139,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-right shadow-inner min-w-[180px]">
               <span className="text-[11px] text-blue-200/90 block font-medium">Couverture Salariale</span>
               <div className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-white">
-                {coveragePct}%
+                {isZeroState ? '100%' : `${coveragePct}%`}
               </div>
               <span className="text-[11px] text-blue-200/80 block mt-0.5">
-                {isDeficit ? `Besoin : ${formatFCFA(Math.max(0, -cashGap))}` : 'Position saine'}
+                {isZeroState ? 'Position saine (0 FCFA)' : isDeficit ? `Besoin : ${formatFCFA(Math.max(0, -cashGap))}` : 'Position saine'}
               </span>
             </div>
 
-            {isDeficit && topUnpaid.length > 0 && (
-              <button
-                onClick={() => onOpenWhatsApp(topUnpaid[0])}
-                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white hover:bg-blue-50 text-[#0071E3] font-semibold text-xs sm:text-sm transition-all shadow-md active:scale-98"
-              >
-                <PhoneCall className="w-4 h-4" />
-                <span>Relancer {topUnpaid[0].parentName} ({formatFCFA(topUnpaid[0].balanceRemaining)})</span>
-              </button>
-            )}
+            <div className="flex flex-col sm:flex-row gap-2">
+              {onUpdateConfig && (
+                <button
+                  type="button"
+                  onClick={handleOpenAdjustModal}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-3 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/25 text-white font-semibold text-xs transition-all shadow-xs active:scale-98 cursor-pointer"
+                  title="Ajuster la trésorerie et la masse salariale"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>Ajuster</span>
+                </button>
+              )}
+
+              {isDeficit && topUnpaid.length > 0 && (
+                <button
+                  onClick={() => onOpenWhatsApp(topUnpaid[0])}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-blue-50 text-[#0071E3] font-semibold text-xs sm:text-sm transition-all shadow-md active:scale-98 cursor-pointer"
+                >
+                  <PhoneCall className="w-4 h-4" />
+                  <span>Relancer {topUnpaid[0].parentName} ({formatFCFA(topUnpaid[0].balanceRemaining)})</span>
+                </button>
+              )}
+
+              {isZeroState && (
+                <button
+                  onClick={() => onNavigateTab('staff')}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-blue-50 text-[#0071E3] font-semibold text-xs sm:text-sm transition-all shadow-md active:scale-98 cursor-pointer"
+                >
+                  <Users2 className="w-4 h-4" />
+                  <span>Gérer le Personnel</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -123,19 +186,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* 2. MACRO FINANCIAL METRICS (Soft UI Cards with Circular Pastel Icon Pills) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Trésorerie en Banque */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        <div className="p-5 rounded-3xl bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md relative group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">Trésorerie Disponible</span>
-            <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[#0071E3] dark:text-[#38BDF8] flex items-center justify-center shadow-2xs shrink-0">
-              <Wallet className="w-5 h-5" />
+            <div className="flex items-center gap-1">
+              {onUpdateConfig && (
+                <button
+                  type="button"
+                  onClick={handleOpenAdjustModal}
+                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-[#0071E3] hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                  title="Modifier le solde bancaire"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[#0071E3] dark:text-[#38BDF8] flex items-center justify-center shadow-2xs shrink-0">
+                <Wallet className="w-5 h-5" />
+              </div>
             </div>
           </div>
           <div className="text-2xl font-bold font-mono text-[#0F172A] dark:text-[#F8FAFC] tracking-tight mt-2">
-            {formatFCFA(config.availableBankCash)}
+            {formatFCFA(effectiveCash)}
           </div>
           <div className="mt-2 text-xs flex justify-between text-[#64748B] dark:text-[#94A3B8]">
             <span>Masse salariale fixe :</span>
-            <span className="font-mono font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{formatFCFA(config.monthlyFixedPayroll)}</span>
+            <span className="font-mono font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{formatFCFA(effectivePayroll)}</span>
           </div>
         </div>
 
@@ -198,10 +273,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 3. DEDICATED SECTION: USER STATISTICS ON DASHBOARD */}
-      <UserStatsSection stats={userStats} />
-
-      {/* 4. OPERATIONAL GRIDS: Top Impayés & Alertes Réunions Parents */}
+      {/* 3. OPERATIONAL GRIDS: Top Impayés & Alertes Réunions Parents */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Column: Top Impayés */}
         <div className="lg:col-span-7 bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] p-6 space-y-4">
@@ -322,21 +394,139 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           )}
 
-          {/* Shortcut to Prorata Temporis */}
+          {/* Link to Financial Management */}
           <div className="p-4 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/70 dark:border-[#222F46] rounded-2xl flex items-center justify-between text-xs">
             <div>
-              <span className="font-semibold text-[#0F172A] dark:text-[#F8FAFC] block">Moteur Prorata Temporis</span>
-              <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">Exemple CE2 au 3 novembre : 144 000 FCFA</p>
+              <span className="font-semibold text-[#0F172A] dark:text-[#F8FAFC] block">Gestion Financière & Caisses</span>
+              <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">Suivi des versements et soldes réels des élèves</p>
             </div>
             <button
               onClick={() => onNavigateTab('finance')}
               className="text-xs font-semibold text-[#0071E3] hover:underline"
             >
-              Simulateur →
+              Consulter les Caisses →
             </button>
           </div>
         </div>
       </div>
+
+      {/* QUICK TREASURY & PAYROLL CONFIGURATION MODAL */}
+      {isAdjustModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md bg-white dark:bg-[#151D2E] rounded-3xl p-6 shadow-2xl border border-slate-200/80 dark:border-[#222F46] space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#222F46] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-[#0071E3] dark:text-[#38BDF8]">
+                  <SlidersHorizontal className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                    Trésorerie & Masse Salariale
+                  </h3>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                    Ajuster vos repères budgétaires réels
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAdjustModalOpen(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTreasurySettings} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
+                  Trésorerie Disponible en Banque (FCFA)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    step={10000}
+                    value={formBankCash}
+                    onChange={(e) => setFormBankCash(Math.max(0, Number(e.target.value)))}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-sm font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-[#64748B] font-bold">
+                    FCFA
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                  Solde bancaire réel de départ. Laissez à 0 si vous commencez sur un compte vierge.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
+                    Masse Salariale Fixe Mensuelle (FCFA)
+                  </label>
+                  {staffPayroll > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setFormPayroll(staffPayroll)}
+                      className="text-[10px] text-[#0071E3] font-semibold hover:underline"
+                    >
+                      Utiliser total personnel ({formatFCFA(staffPayroll)})
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    step={10000}
+                    value={formPayroll}
+                    onChange={(e) => setFormPayroll(Math.max(0, Number(e.target.value)))}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-2xl text-sm font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-[#64748B] font-bold">
+                    FCFA/mois
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                  Engagements salariaux mensuels. Laissez à 0 si vous n'avez pas encore défini de masse salariale fixe.
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-[#222F46]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormBankCash(0);
+                    setFormPayroll(0);
+                  }}
+                  className="px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors"
+                >
+                  Tout mettre à 0 FCFA
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAdjustModalOpen(false)}
+                    className="px-4 py-2 text-xs font-semibold text-[#64748B] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0071E3] hover:bg-[#005bb5] text-white text-xs font-semibold shadow-xs"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Enregistrer</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

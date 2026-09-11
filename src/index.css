@@ -318,6 +318,8 @@ html:not(.dark) .fixed .bg-white,
   header,
   nav,
   main,
+  footer,
+  .no-print,
   .print\:hidden {
     display: none !important;
     visibility: hidden !important;
@@ -347,8 +349,8 @@ html:not(.dark) .fixed .bg-white,
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 4mm !important;
-    border: 2px solid #000000 !important;
+    padding: 2mm 4mm !important;
+    border: 1.5px solid #000000 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     background: #ffffff !important;

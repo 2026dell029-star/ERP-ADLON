@@ -24,6 +24,7 @@ import {
   Calculator,
   TrendingUp,
   Coins,
+  Wallet,
   Search,
   ArrowRight,
   ShieldCheck,
@@ -39,10 +40,10 @@ interface ConfigViewProps {
 }
 
 const CYCLES: { id: StudentCycle; name: string; icon: string; desc: string; color: string; defaultMonthly: number }[] = [
-  { id: 'Préscolaire', name: 'Cycle Préscolaire', icon: '🧸', desc: 'Maternelle (PS, MS, GS)', color: 'from-amber-500/10 to-orange-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400', defaultMonthly: 15000 },
-  { id: 'Primaire', name: 'Cycle Primaire', icon: '🎒', desc: 'Du CP1 au CM2', color: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400', defaultMonthly: 18000 },
-  { id: 'Collège', name: 'Cycle Collège', icon: '📐', desc: 'De la 6ème à la 3ème (BEPC)', color: 'from-blue-500/10 to-indigo-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400', defaultMonthly: 25000 },
-  { id: 'Lycée', name: 'Cycle Lycée', icon: '🎓', desc: '2nde, 1ère, Terminale (BAC)', color: 'from-purple-500/10 to-violet-500/10 border-purple-500/30 text-purple-600 dark:text-purple-400', defaultMonthly: 35000 },
+  { id: 'Préscolaire', name: 'Cycle Préscolaire', icon: '🧸', desc: 'Maternelle (PS, MS, GS)', color: 'from-amber-500/10 to-orange-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400', defaultMonthly: 0 },
+  { id: 'Primaire', name: 'Cycle Primaire', icon: '🎒', desc: 'Du CP1 au CM2', color: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400', defaultMonthly: 0 },
+  { id: 'Collège', name: 'Cycle Collège', icon: '📐', desc: 'De la 6ème à la 3ème (BEPC)', color: 'from-blue-500/10 to-indigo-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400', defaultMonthly: 0 },
+  { id: 'Lycée', name: 'Cycle Lycée', icon: '🎓', desc: '2nde, 1ère, Terminale (BAC)', color: 'from-purple-500/10 to-violet-500/10 border-purple-500/30 text-purple-600 dark:text-purple-400', defaultMonthly: 0 },
 ];
 
 const STANDARD_CURRICULUM_TEMPLATES: Record<StudentCycle, { name: string; coefficient: number; category: 'Scientifique' | 'Littéraire' | 'Sport & Arts' | 'Vie Scolaire' | 'Autre' }[]> = {
@@ -207,7 +208,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
   const [newClassTeacher, setNewClassTeacher] = useState('');
   const [newClassRoom, setNewClassRoom] = useState('');
   const [newClassCapacity, setNewClassCapacity] = useState<number>(30);
-  const [newClassMonthlyTuition, setNewClassMonthlyTuition] = useState<number>(18000);
+  const [newClassMonthlyTuition, setNewClassMonthlyTuition] = useState<number>(0);
 
   // New subject inline state
   const [newSubName, setNewSubName] = useState('');
@@ -222,7 +223,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
   const [tuitionCycleFilter, setTuitionCycleFilter] = useState<string>('all');
   const [tuitionSearch, setTuitionSearch] = useState<string>('');
   const [batchCycle, setBatchCycle] = useState<StudentCycle>('Primaire');
-  const [batchAmount, setBatchAmount] = useState<number>(18000);
+  const [batchAmount, setBatchAmount] = useState<number>(0);
   const [batchSuccessMessage, setBatchSuccessMessage] = useState<string>('');
 
   // Sync selected class if cycle changes and selected class is no longer in current cycle
@@ -273,7 +274,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
       id: `cls-${Date.now()}`,
       name: newClassName.trim(),
       cycle: selectedCycle,
-      monthlyTuition: Number(newClassMonthlyTuition) || CYCLES.find(c => c.id === selectedCycle)?.defaultMonthly || 18000,
+      monthlyTuition: Number(newClassMonthlyTuition) || CYCLES.find(c => c.id === selectedCycle)?.defaultMonthly || 0,
       mainTeacher: newClassTeacher.trim() || 'Enseignant non assigné',
       roomNumber: newClassRoom.trim() || 'Salle standard',
       maxCapacity: Number(newClassCapacity) || 30,
@@ -444,12 +445,12 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
   // Computed metrics for tuition
   const totalClassesCount = (formData.classes || []).length;
   const averageMonthlyFee = totalClassesCount > 0 
-    ? Math.round((formData.classes || []).reduce((sum, c) => sum + (c.monthlyTuition || 18000), 0) / totalClassesCount)
+    ? Math.round((formData.classes || []).reduce((sum, c) => sum + (c.monthlyTuition || 0), 0) / totalClassesCount)
     : 0;
   const averageAnnualFee = averageMonthlyFee * formData.schoolDurationMonths;
   const totalSchoolCapacity = (formData.classes || []).reduce((sum, c) => sum + (c.maxCapacity || 30), 0);
   const totalPotentialRevenue = (formData.classes || []).reduce((sum, c) => {
-    const monthly = c.monthlyTuition || 18000;
+    const monthly = c.monthlyTuition || 0;
     const capacity = c.maxCapacity || 30;
     return sum + (monthly * formData.schoolDurationMonths * capacity);
   }, 0);
@@ -709,7 +710,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                     onChange={(e) => {
                       const cyc = e.target.value as StudentCycle;
                       setBatchCycle(cyc);
-                      const def = CYCLES.find(c => c.id === cyc)?.defaultMonthly || 18000;
+                      const def = CYCLES.find(c => c.id === cyc)?.defaultMonthly || 0;
                       setBatchAmount(def);
                     }}
                     className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC]"
@@ -774,7 +775,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredTuitionClasses.map((cls) => {
-                    const monthly = cls.monthlyTuition || 18000;
+                    const monthly = cls.monthlyTuition || 0;
                     const annual = monthly * formData.schoolDurationMonths;
                     const classCapacity = cls.maxCapacity || 30;
                     const totalClassAnnualRevenue = annual * classCapacity;
@@ -944,6 +945,61 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                     <span>Total annuel cantine :</span>
                     <span className="font-mono">{formatFCFA(formData.canteenMonthlyFee * formData.schoolDurationMonths)}</span>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. TRESORERIE EN BANQUE & MASSE SALARIALE FIXE */}
+            <div className="p-6 bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-[#222F46] pb-3">
+                <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-[#0071E3]" />
+                  <span>Trésorerie Disponible en Banque & Masse Salariale Mensuelle</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, availableBankCash: 0, monthlyFixedPayroll: 0 })}
+                  className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                >
+                  Réinitialiser à 0 FCFA (Vierge)
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] space-y-2">
+                  <label className="block font-semibold text-xs text-[#0F172A] dark:text-[#F8FAFC]">
+                    Trésorerie Disponible en Banque :
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step={10000}
+                      min={0}
+                      value={formData.availableBankCash ?? 0}
+                      onChange={(e) => setFormData({ ...formData, availableBankCash: Math.max(0, Number(e.target.value)) })}
+                      className="w-full p-2.5 bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] rounded-xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
+                    />
+                    <span className="absolute right-3 top-2.5 text-[10px] text-[#64748B] font-bold">FCFA</span>
+                  </div>
+                  <p className="text-[10px] text-[#64748B]">Solde de trésorerie réel en banque disponible (0 FCFA si compte vierge).</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] space-y-2">
+                  <label className="block font-semibold text-xs text-[#0F172A] dark:text-[#F8FAFC]">
+                    Masse Salariale Fixe Mensuelle :
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step={10000}
+                      min={0}
+                      value={formData.monthlyFixedPayroll ?? 0}
+                      onChange={(e) => setFormData({ ...formData, monthlyFixedPayroll: Math.max(0, Number(e.target.value)) })}
+                      className="w-full p-2.5 bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] rounded-xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
+                    />
+                    <span className="absolute right-3 top-2.5 text-[10px] text-[#64748B] font-bold">FCFA/mois</span>
+                  </div>
+                  <p className="text-[10px] text-[#64748B]">Masse salariale mensuelle fixe de l'établissement (0 FCFA si calculée via les contrats du personnel).</p>
                 </div>
               </div>
             </div>
@@ -1144,7 +1200,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                   {currentCycleClasses.map((cls) => {
                     const isSelected = selectedClassName === cls.name;
                     const subsCount = (formData.classSubjects?.[cls.name] || []).length;
-                    const monthly = cls.monthlyTuition || 18000;
+                    const monthly = cls.monthlyTuition || 0;
                     const annual = monthly * formData.schoolDurationMonths;
 
                     return (

@@ -16,17 +16,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onRecordPayment,
   config,
 }) => {
-  const [amount, setAmount] = useState<number>(Math.min(student.balanceRemaining, 50000) || 20000);
-  const [method, setMethod] = useState<PaymentMethod>('Airtel Money');
-  const [note, setNote] = useState<string>('Versement scolarité');
-  const [cashierName, setCashierName] = useState<string>('Mme Makosso (Comptable)');
+  const [amount, setAmount] = useState<number>(student.balanceRemaining > 0 ? student.balanceRemaining : 0);
+  const [method, setMethod] = useState<PaymentMethod>('Espèces');
+  const [note, setNote] = useState<string>('Règlement scolarité');
+  const [cashierName, setCashierName] = useState<string>('');
   const [generatedReceipt, setGeneratedReceipt] = useState<PaymentRecord | null>(null);
 
-  const schoolName = config?.schoolName || 'Complexe Scolaire Privé ADLON';
-  const schoolCity = config?.schoolCity || 'Brazzaville';
-  const schoolCountry = config?.schoolCountry || 'République du Congo';
-  const schoolPhone = config?.schoolPhone || '+242 06 611 22 33';
-  const academicYear = config?.academicYear || '2026-2027';
+  const schoolName = config?.schoolName || '';
+  const schoolCity = config?.schoolCity || '';
+  const schoolCountry = config?.schoolCountry || '';
+  const schoolPhone = config?.schoolPhone || '';
+  const academicYear = config?.academicYear || '';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

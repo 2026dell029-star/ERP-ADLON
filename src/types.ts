@@ -124,6 +124,9 @@ export interface StaffMember {
   phone: string;
   hireDate: string;
   status: 'Actif' | 'En congé';
+  assignedClasses?: string[];
+  assignedSubjects?: string[];
+  assignedCycles?: StudentCycle[];
 }
 
 export interface CyclePricing {
@@ -169,12 +172,12 @@ export interface SchoolConfig {
   countryCode: string; // +242 for Congo
   currency: string; // FCFA
   schoolDurationMonths: number; // 10
-  registrationFeeNew: number; // 25 000
-  registrationFeeOld: number; // 15 000
-  canteenMonthlyFee: number; // 20 000
+  registrationFeeNew: number; // 0 FCFA par défaut
+  registrationFeeOld: number; // 0 FCFA par défaut
+  canteenMonthlyFee: number; // 0 FCFA par défaut
   parentAbsenceAlertThreshold: number; // 2
-  availableBankCash: number; // e.g. 420 000 FCFA
-  monthlyFixedPayroll: number; // e.g. 730 000 FCFA
+  availableBankCash: number; // Solde réel disponible en banque (0 FCFA par défaut)
+  monthlyFixedPayroll: number; // Masse salariale mensuelle fixe ou calculée (0 FCFA par défaut)
   pricingByCycle: CyclePricing[];
   classes?: ClassDefinition[];
   classSubjects?: Record<string, SubjectDefinition[]>; // mapping classLevel -> SubjectDefinition[]

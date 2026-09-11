@@ -43,6 +43,7 @@ import {
   saveSchoolConfigToFirestore,
   saveStudentToFirestore,
   saveStaffToFirestore,
+  deleteStaffFromFirestore,
   addAuditLogToFirestore,
   seedInitialFirestoreData,
 } from './services/firestoreService';
@@ -139,11 +140,35 @@ export default function App() {
     }
   });
 
-  // State management for active school data - clean initialization without mock data
+  // State management for active school data - clean initialization without mock data or non-zero default amounts
   const [config, setConfig] = useState<SchoolConfig>(() => {
     try {
       const saved = localStorage.getItem('adlon_config');
-      return saved ? { ...initialConfig, ...JSON.parse(saved) } : initialConfig;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.registrationFeeNew === 25000) parsed.registrationFeeNew = 0;
+        if (parsed.registrationFeeOld === 15000) parsed.registrationFeeOld = 0;
+        if (parsed.canteenMonthlyFee === 20000) parsed.canteenMonthlyFee = 0;
+        // Purge residual mock simulation amounts: bank cash of 470 000 / 420 000 and fixed payroll of 730 000
+        if (parsed.availableBankCash === 470000 || parsed.availableBankCash === 420000) parsed.availableBankCash = 0;
+        if (parsed.monthlyFixedPayroll === 730000) parsed.monthlyFixedPayroll = 0;
+        if (parsed.classes && Array.isArray(parsed.classes)) {
+          parsed.classes = parsed.classes.map((c: any) => ({
+            ...c,
+            monthlyTuition: (c.monthlyTuition === 15500 || c.monthlyTuition === 16000 || c.monthlyTuition === 17500 || c.monthlyTuition === 18000 || c.monthlyTuition === 19000 || c.monthlyTuition === 20000 || c.monthlyTuition === 22000 || c.monthlyTuition === 22500 || c.monthlyTuition === 23000 || c.monthlyTuition === 24000 || c.monthlyTuition === 26000 || c.monthlyTuition === 27000 || c.monthlyTuition === 28000) ? 0 : (c.monthlyTuition || 0)
+          }));
+        }
+        if (parsed.pricingByCycle && Array.isArray(parsed.pricingByCycle)) {
+          parsed.pricingByCycle = parsed.pricingByCycle.map((p: any) => ({
+            ...p,
+            minTuition: 0,
+            maxTuition: 0,
+            defaultTuition: 0
+          }));
+        }
+        return { ...initialConfig, ...parsed };
+      }
+      return initialConfig;
     } catch {
       return initialConfig;
     }
@@ -236,6 +261,17 @@ export default function App() {
     }
   }, [currentRole]);
 
+  // Auto-clean any residual legacy mock amounts (470 000 / 420 000 cash or 730 000 payroll)
+  useEffect(() => {
+    if (config.availableBankCash === 470000 || config.availableBankCash === 420000 || config.monthlyFixedPayroll === 730000) {
+      setConfig((prev) => ({
+        ...prev,
+        availableBankCash: (prev.availableBankCash === 470000 || prev.availableBankCash === 420000) ? 0 : prev.availableBankCash,
+        monthlyFixedPayroll: prev.monthlyFixedPayroll === 730000 ? 0 : prev.monthlyFixedPayroll,
+      }));
+    }
+  }, [config.availableBankCash, config.monthlyFixedPayroll]);
+
   useEffect(() => {
     localStorage.setItem('adlon_config', JSON.stringify(config));
   }, [config]);
@@ -309,7 +345,14 @@ export default function App() {
     const unsubConfig = subscribeToSchoolConfig(
       (remoteConfig) => {
         if (remoteConfig && remoteConfig.schoolName) {
-          setConfig((prev) => ({ ...prev, ...remoteConfig }));
+          const cleanRemote = { ...remoteConfig };
+          if (cleanRemote.availableBankCash === 470000 || cleanRemote.availableBankCash === 420000) {
+            cleanRemote.availableBankCash = 0;
+          }
+          if (cleanRemote.monthlyFixedPayroll === 730000) {
+            cleanRemote.monthlyFixedPayroll = 0;
+          }
+          setConfig((prev) => ({ ...prev, ...cleanRemote }));
         }
       },
       undefined,
@@ -598,9 +641,9 @@ export default function App() {
     }
 
     addAuditLog(
-      user?.displayName || 'Directeur des Admissions',
+      user?.displayName || 'Direction',
       'Admissions',
-      `Inscription Prorata Temporis de ${newStudent.firstName} ${newStudent.lastName} (${newStudent.classLevel}) - ${newStudent.monthsEnrolled} mois`,
+      `Inscription de ${newStudent.firstName} ${newStudent.lastName} (${newStudent.classLevel}) - ${newStudent.monthsEnrolled} mois`,
       'Configuration'
     );
   };
@@ -618,6 +661,39 @@ export default function App() {
       `Création du contrat de ${newStaff.name} (${newStaff.role} - ${newStaff.contractType})`,
       'Sécurité'
     );
+  };
+
+  // Update staff member
+  const handleUpdateStaff = (updatedMember: StaffMember) => {
+    setStaff((prev) => prev.map((s) => (s.id === updatedMember.id ? updatedMember : s)));
+    if (user) {
+      saveStaffToFirestore(updatedMember, currentSchool?.id).catch(console.warn);
+    }
+
+    addAuditLog(
+      user?.displayName || 'Direction',
+      'Direction',
+      `Mise à jour des affectations et contrat de ${updatedMember.name}`,
+      'Configuration'
+    );
+  };
+
+  // Delete staff member
+  const handleDeleteStaff = (staffId: string) => {
+    const target = staff.find((s) => s.id === staffId);
+    setStaff((prev) => prev.filter((s) => s.id !== staffId));
+    if (user) {
+      deleteStaffFromFirestore(staffId, currentSchool?.id).catch(console.warn);
+    }
+
+    if (target) {
+      addAuditLog(
+        user?.displayName || 'Direction',
+        'Direction',
+        `Suppression du contrat de ${target.name}`,
+        'Sécurité'
+      );
+    }
   };
 
   // Update students
@@ -724,7 +800,7 @@ export default function App() {
         <TopBar
           activeTab={activeTab}
           availableCash={config.availableBankCash}
-          monthlyPayroll={config.monthlyFixedPayroll}
+          monthlyPayroll={config.monthlyFixedPayroll > 0 ? config.monthlyFixedPayroll : staff.reduce((acc, s) => acc + (s.monthlySalary || 0), 0)}
           onQuickWhatsAppRelance={handleQuickWhatsAppRelance}
           onToggleSidebar={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           theme={theme}
@@ -740,6 +816,7 @@ export default function App() {
             <DashboardView
               config={config}
               students={students}
+              staff={staff}
               userStats={userStats}
               onOpenWhatsApp={(student) => setWhatsAppModalData({ student, defaultType: 'relance' })}
               onOpenStudentDetail={(student) => setDetailModalStudent(student)}
@@ -747,6 +824,12 @@ export default function App() {
               onNavigateTab={(tab) => {
                 if (roleConfig.allowedTabs.includes(tab)) {
                   setActiveTab(tab);
+                }
+              }}
+              onUpdateConfig={(updatedConfig) => {
+                setConfig(updatedConfig);
+                if (user) {
+                  saveSchoolConfigToFirestore(updatedConfig, currentSchool?.id).catch(console.warn);
                 }
               }}
             />
@@ -812,6 +895,14 @@ export default function App() {
               config={config}
               staff={staff}
               onAddNewStaff={handleAddNewStaff}
+              onUpdateStaff={handleUpdateStaff}
+              onDeleteStaff={handleDeleteStaff}
+              onUpdateConfig={(updatedConfig) => {
+                setConfig(updatedConfig);
+                if (user) {
+                  saveSchoolConfigToFirestore(updatedConfig, currentSchool?.id).catch(console.warn);
+                }
+              }}
             />
           )}
 

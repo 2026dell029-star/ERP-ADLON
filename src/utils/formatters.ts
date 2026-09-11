@@ -34,21 +34,17 @@ export function formatFCFA(amount: number): string {
 export function getClassMonthlyTuition(
   className: string,
   config?: SchoolConfig,
-  cycleFallback?: StudentCycle
+  _cycleFallback?: StudentCycle
 ): number {
   if (config?.classes) {
     const foundClass = config.classes.find((c) => c.name === className);
-    if (foundClass && typeof foundClass.monthlyTuition === 'number' && foundClass.monthlyTuition > 0) {
+    if (foundClass && typeof foundClass.monthlyTuition === 'number') {
       return foundClass.monthlyTuition;
     }
   }
 
-  // Fallback defaults per cycle (approx monthly)
-  if (cycleFallback === 'Préscolaire') return 15500;
-  if (cycleFallback === 'Primaire') return 18000;
-  if (cycleFallback === 'Collège') return 23000;
-  if (cycleFallback === 'Lycée') return 27000;
-  return 18000;
+  // Zero default for clean unconfigured state
+  return 0;
 }
 
 export function getClassAnnualTuition(

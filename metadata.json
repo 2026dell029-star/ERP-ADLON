@@ -1,6 +1,6 @@
 {
   "name": "ERP ADLON - Pilotage Scolaire & Cahier des Charges",
-  "description": "Système ERP scolaire unifié ADLON avec gestion des inscriptions, registre des élèves, mode sombre/clair, tableau de bord, recouvrement WhatsApp direct (+242), calcul prorata temporis et gestion de la paie.",
+  "description": "Système ERP scolaire unifié ADLON avec gestion des inscriptions, registre des élèves, mode sombre/clair, tableau de bord, recouvrement WhatsApp direct (+242), caisses et gestion de la paie.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

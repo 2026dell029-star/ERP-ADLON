@@ -38,7 +38,7 @@ const TAB_TITLES: Record<NavigationTab, { title: string; subtitle: string }> = {
   },
   finance: {
     title: 'Finances & Recouvrement',
-    subtitle: 'Calcul automatique du prorata temporis et encaissements',
+    subtitle: 'Suivi de la trésorerie et état des encaissements',
   },
   crm: {
     title: 'CRM WhatsApp',
