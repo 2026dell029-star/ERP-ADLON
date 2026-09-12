@@ -114,6 +114,21 @@ export interface StudentTermReport {
   academicRemarks: string;
 }
 
+export type WeekDay = 'Lundi' | 'Mardi' | 'Mercredi' | 'Jeudi' | 'Vendredi' | 'Samedi';
+
+export interface TimetableSlot {
+  id: string;
+  day: WeekDay;
+  startTime: string; // e.g. "08:00" or "08h00"
+  endTime: string;   // e.g. "10:00" or "10h00"
+  className: string; // e.g. "6ème", "3ème", "Terminale D"
+  subjectName: string; // e.g. "Histoire-Géographie"
+  teacherId: string;   // StaffMember.id
+  teacherName: string; // StaffMember.name
+  roomNumber?: string;
+  note?: string;
+}
+
 export interface StaffMember {
   id: string;
   name: string;
@@ -127,6 +142,9 @@ export interface StaffMember {
   assignedClasses?: string[];
   assignedSubjects?: string[];
   assignedCycles?: StudentCycle[];
+  payType?: 'fixed' | 'hourly'; // 'fixed' (mensuel fixe) ou 'hourly' (prestataire / vacataire au taux horaire)
+  hourlyRate?: number; // Taux horaire en FCFA/heure (ex: 2 500)
+  weeklyHours?: number; // Heures hebdomadaires cumulées dans l'emploi du temps
 }
 
 export interface CyclePricing {
@@ -145,6 +163,8 @@ export interface ClassDefinition {
   maxCapacity?: number;
   description?: string;
   monthlyTuition?: number; // Montant mensuel à payer en FCFA pour 1 mois (ex: 18 000 FCFA / mois)
+  registrationFee?: number; // Frais d'inscription pour nouveaux élèves (FCFA)
+  reRegistrationFee?: number; // Frais de réinscription pour anciens élèves (FCFA)
 }
 
 export interface SubjectDefinition {
@@ -181,6 +201,7 @@ export interface SchoolConfig {
   pricingByCycle: CyclePricing[];
   classes?: ClassDefinition[];
   classSubjects?: Record<string, SubjectDefinition[]>; // mapping classLevel -> SubjectDefinition[]
+  timetableSlots?: TimetableSlot[];
 }
 
 export interface AuditLog {
@@ -295,14 +316,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissionConfig> = {
   directeur: {
     id: 'directeur',
     title: 'Directeur',
-    badge: 'Pédagogie & CRM WhatsApp',
-    shortDesc: 'Saisie des notes, bulletins scolaires, radar pédagogique et CRM WhatsApp.',
-    fullDesc: 'Direction pédagogique, saisie des notes, bulletins officiels et communication CRM WhatsApp.',
-    allowedTabs: ['dashboard', 'pedagogy', 'grades', 'crm'],
+    badge: 'Pédagogie, Paie & CRM',
+    shortDesc: 'Notes, bulletins, radar pédagogique, personnel & paie et CRM WhatsApp.',
+    fullDesc: 'Direction pédagogique, gestion du personnel & paie, saisie des notes, bulletins officiels et communication CRM WhatsApp.',
+    allowedTabs: ['dashboard', 'pedagogy', 'grades', 'crm', 'staff'],
     canManageFinances: false,
     canManageEnrollment: false,
     canEditGrades: true,
-    canManageStaff: false,
+    canManageStaff: true,
     canEditConfig: false,
     color: 'from-emerald-600 to-teal-600',
   },

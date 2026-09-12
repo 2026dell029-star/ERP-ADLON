@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { SchoolConfig, Student, StudentCycle, StudentStatus } from '../types';
-import { formatFCFA, cleanPhoneNumber, getClassMonthlyTuition, getClassesForCycle } from '../utils/formatters';
+import { formatFCFA, cleanPhoneNumber, getClassMonthlyTuition, getClassRegistrationFee, getClassesForCycle } from '../utils/formatters';
 import { 
   UserPlus, 
   Search, 
@@ -117,7 +117,7 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
   const monthData = MONTHS_LIST.find(m => m.index === formData.enrollmentMonth) || MONTHS_LIST[0];
   const monthsEnrolled = monthData.monthsLeft;
   const prorataTuition = monthlyTuition * monthsEnrolled;
-  const registrationFee = formData.isNewStudent ? config.registrationFeeNew : config.registrationFeeOld;
+  const registrationFee = getClassRegistrationFee(formData.classLevel, formData.isNewStudent, config);
   const canteenTotal = formData.hasCanteen ? config.canteenMonthlyFee * monthsEnrolled : 0;
   const grandTotalDue = prorataTuition + registrationFee + canteenTotal;
 
@@ -318,7 +318,7 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
             {newStudentsCount}
           </div>
           <div className="mt-1 text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-            Frais : {formatFCFA(config.registrationFeeNew)} / élève
+            Réf. : {formatFCFA(config.registrationFeeNew)} (défini par classe)
           </div>
         </div>
 
@@ -333,7 +333,7 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
             {returningStudentsCount}
           </div>
           <div className="mt-1 text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-            Frais : {formatFCFA(config.registrationFeeOld)} / élève
+            Réf. : {formatFCFA(config.registrationFeeOld)} (défini par classe)
           </div>
         </div>
 

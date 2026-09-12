@@ -57,6 +57,27 @@ export function getClassAnnualTuition(
   return monthly * months;
 }
 
+export function getClassRegistrationFee(
+  className: string,
+  isNewStudent: boolean,
+  config?: SchoolConfig
+): number {
+  if (config?.classes) {
+    const foundClass = config.classes.find((c) => c.name === className);
+    if (foundClass) {
+      if (isNewStudent && typeof foundClass.registrationFee === 'number') {
+        return foundClass.registrationFee;
+      }
+      if (!isNewStudent && typeof foundClass.reRegistrationFee === 'number') {
+        return foundClass.reRegistrationFee;
+      }
+    }
+  }
+
+  // Fallback to global config values if not customized at class level
+  return isNewStudent ? (config?.registrationFeeNew ?? 0) : (config?.registrationFeeOld ?? 0);
+}
+
 export function cleanPhoneNumber(phone: string, countryCode: string = '+242'): string {
   // Remove spaces, dots, dashes
   let cleaned = phone.replace(/[\s.-]/g, '');

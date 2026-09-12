@@ -209,6 +209,8 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
   const [newClassRoom, setNewClassRoom] = useState('');
   const [newClassCapacity, setNewClassCapacity] = useState<number>(30);
   const [newClassMonthlyTuition, setNewClassMonthlyTuition] = useState<number>(0);
+  const [newClassRegistrationFee, setNewClassRegistrationFee] = useState<number>(0);
+  const [newClassReRegistrationFee, setNewClassReRegistrationFee] = useState<number>(0);
 
   // New subject inline state
   const [newSubName, setNewSubName] = useState('');
@@ -219,12 +221,9 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
   // Quick Duplicate subject modal / state
   const [duplicateSourceClass, setDuplicateSourceClass] = useState<string>('');
 
-  // Tuition tab filters and batch tools
+  // Tuition tab filters
   const [tuitionCycleFilter, setTuitionCycleFilter] = useState<string>('all');
   const [tuitionSearch, setTuitionSearch] = useState<string>('');
-  const [batchCycle, setBatchCycle] = useState<StudentCycle>('Primaire');
-  const [batchAmount, setBatchAmount] = useState<number>(0);
-  const [batchSuccessMessage, setBatchSuccessMessage] = useState<string>('');
 
   // Sync selected class if cycle changes and selected class is no longer in current cycle
   const handleCycleSelect = (cycle: StudentCycle) => {
@@ -252,17 +251,26 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
     }));
   };
 
-  // Batch apply monthly fee to all classes in a specific cycle
-  const handleApplyBatchTuition = (cycle: StudentCycle, monthlyAmount: number) => {
+  // Update Registration Fee (Nouveau) for a specific class
+  const handleUpdateClassRegistrationFee = (classId: string, feeAmount: number) => {
     const updatedClasses = (formData.classes || []).map((c) =>
-      c.cycle === cycle ? { ...c, monthlyTuition: Math.max(0, monthlyAmount) } : c
+      c.id === classId ? { ...c, registrationFee: Math.max(0, feeAmount) } : c
     );
     setFormData((prev) => ({
       ...prev,
       classes: updatedClasses,
     }));
-    setBatchSuccessMessage(`Tarif de ${formatFCFA(monthlyAmount)}/mois appliqué à toutes les classes du cycle ${cycle} !`);
-    setTimeout(() => setBatchSuccessMessage(''), 3500);
+  };
+
+  // Update Re-registration Fee (Ancien) for a specific class
+  const handleUpdateClassReRegistrationFee = (classId: string, feeAmount: number) => {
+    const updatedClasses = (formData.classes || []).map((c) =>
+      c.id === classId ? { ...c, reRegistrationFee: Math.max(0, feeAmount) } : c
+    );
+    setFormData((prev) => ({
+      ...prev,
+      classes: updatedClasses,
+    }));
   };
 
   // Add Class to currently selected cycle
@@ -275,6 +283,8 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
       name: newClassName.trim(),
       cycle: selectedCycle,
       monthlyTuition: Number(newClassMonthlyTuition) || CYCLES.find(c => c.id === selectedCycle)?.defaultMonthly || 0,
+      registrationFee: Number(newClassRegistrationFee) || 0,
+      reRegistrationFee: Number(newClassReRegistrationFee) || 0,
       mainTeacher: newClassTeacher.trim() || 'Enseignant non assigné',
       roomNumber: newClassRoom.trim() || 'Salle standard',
       maxCapacity: Number(newClassCapacity) || 30,
@@ -303,8 +313,12 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
     }));
 
     setNewClassName('');
+    setNewClassMonthlyTuition(0);
+    setNewClassRegistrationFee(0);
+    setNewClassReRegistrationFee(0);
     setNewClassTeacher('');
     setNewClassRoom('');
+    setNewClassCapacity(30);
     setSelectedClassName(newClassObj.name);
     setIsAddClassOpen(false);
   };
@@ -693,61 +707,6 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                   />
                 </div>
               </div>
-
-              {/* Batch Apply Tool to quickly set monthly rate for a full cycle */}
-              <div className="p-3.5 bg-[#F8FAFC] dark:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-[#222F46] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
-                    Application rapide par lot :
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] text-[#64748B]">Fixer tout le cycle</span>
-                  <select
-                    value={batchCycle}
-                    onChange={(e) => {
-                      const cyc = e.target.value as StudentCycle;
-                      setBatchCycle(cyc);
-                      const def = CYCLES.find(c => c.id === cyc)?.defaultMonthly || 0;
-                      setBatchAmount(def);
-                    }}
-                    className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC]"
-                  >
-                    <option value="Préscolaire">Préscolaire</option>
-                    <option value="Primaire">Primaire</option>
-                    <option value="Collège">Collège</option>
-                    <option value="Lycée">Lycée</option>
-                  </select>
-
-                  <span className="text-[11px] text-[#64748B]">à :</span>
-                  <input
-                    type="number"
-                    step={1000}
-                    min={5000}
-                    value={batchAmount}
-                    onChange={(e) => setBatchAmount(Number(e.target.value))}
-                    className="w-28 px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] text-xs font-mono font-bold text-[#0071E3] dark:text-[#38BDF8]"
-                  />
-                  <span className="text-xs font-bold text-[#64748B]">FCFA/mois</span>
-
-                  <button
-                    type="button"
-                    onClick={() => handleApplyBatchTuition(batchCycle, batchAmount)}
-                    className="px-3 py-1.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold transition-all shadow-xs"
-                  >
-                    Appliquer au {batchCycle}
-                  </button>
-                </div>
-              </div>
-
-              {batchSuccessMessage && (
-                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span>{batchSuccessMessage}</span>
-                </div>
-              )}
             </div>
 
             {/* 3. INTERACTIVE CLASS-BY-CLASS PRICING TABLE */}
@@ -759,12 +718,12 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                     <span>Grille Tarifaire Détaillée par Classe ({filteredTuitionClasses.length})</span>
                   </h3>
                   <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-                    Entrez le tarif pour 1 mois. Le total annuel pour 1 élève est immédiatement recalculé ({formData.schoolDurationMonths} mois).
+                    Personnalisez les frais de scolarité mensuels, d'inscription et de réinscription pour chaque classe.
                   </p>
                 </div>
 
                 <span className="text-xs font-mono font-bold text-[#0071E3] dark:text-[#38BDF8]">
-                  Base Annuelle : × {formData.schoolDurationMonths} mois
+                  Base Scolarité : × {formData.schoolDurationMonths} mois
                 </span>
               </div>
 
@@ -778,6 +737,8 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                     const monthly = cls.monthlyTuition || 0;
                     const annual = monthly * formData.schoolDurationMonths;
                     const classCapacity = cls.maxCapacity || 30;
+                    const regFee = cls.registrationFee ?? 0;
+                    const reRegFee = cls.reRegistrationFee ?? 0;
                     const totalClassAnnualRevenue = annual * classCapacity;
                     const cycleData = CYCLES.find(c => c.id === cls.cycle);
 
@@ -810,10 +771,10 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                           <div>
                             <div className="flex justify-between items-center text-[11px] mb-1">
                               <label className="font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
-                                Montant à payer pour 1 mois :
+                                Scolarité mensuelle (1 mois) :
                               </label>
                               <span className="text-[10px] text-[#64748B] font-mono">
-                                Base mensuelle élève
+                                Écolage élève
                               </span>
                             </div>
 
@@ -863,7 +824,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                             </div>
 
                             <div className="text-right">
-                              <span className="text-[10px] text-[#64748B] block">Total Annuel / Élève :</span>
+                              <span className="text-[10px] text-[#64748B] block">Total Annuel Écolage :</span>
                               <span className="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400">
                                 {formatFCFA(annual)}
                               </span>
@@ -871,9 +832,92 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                           </div>
                         </div>
 
+                        {/* Registration & Re-registration per class */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div className="p-2.5 bg-white dark:bg-[#151D2E] rounded-xl border border-slate-200/80 dark:border-[#222F46] space-y-1.5">
+                            <div className="flex justify-between items-center text-[10px]">
+                              <label className="font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
+                                Frais Inscription (Nouveau) :
+                              </label>
+                              <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                1ère fois
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="relative flex-1">
+                                <input
+                                  type="number"
+                                  step={1000}
+                                  min={0}
+                                  value={regFee}
+                                  onChange={(e) => handleUpdateClassRegistrationFee(cls.id, Number(e.target.value))}
+                                  className="w-full p-1.5 pr-12 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-lg font-mono font-bold text-xs text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
+                                />
+                                <span className="absolute right-2 top-2 text-[10px] font-bold text-[#64748B]">FCFA</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateClassRegistrationFee(cls.id, Math.max(0, regFee - 1000))}
+                                className="w-6 h-6 rounded bg-slate-100 dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 font-bold text-[10px] hover:bg-slate-200"
+                                title="-1 000 FCFA"
+                              >
+                                -1k
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateClassRegistrationFee(cls.id, regFee + 1000)}
+                                className="w-6 h-6 rounded bg-slate-100 dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 font-bold text-[10px] hover:bg-slate-200"
+                                title="+1 000 FCFA"
+                              >
+                                +1k
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="p-2.5 bg-white dark:bg-[#151D2E] rounded-xl border border-slate-200/80 dark:border-[#222F46] space-y-1.5">
+                            <div className="flex justify-between items-center text-[10px]">
+                              <label className="font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
+                                Réinscription (Ancien) :
+                              </label>
+                              <span className="text-[9px] text-indigo-600 dark:text-indigo-400 font-semibold">
+                                Droit annuel
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="relative flex-1">
+                                <input
+                                  type="number"
+                                  step={1000}
+                                  min={0}
+                                  value={reRegFee}
+                                  onChange={(e) => handleUpdateClassReRegistrationFee(cls.id, Number(e.target.value))}
+                                  className="w-full p-1.5 pr-12 bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] rounded-lg font-mono font-bold text-xs text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
+                                />
+                                <span className="absolute right-2 top-2 text-[10px] font-bold text-[#64748B]">FCFA</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateClassReRegistrationFee(cls.id, Math.max(0, reRegFee - 1000))}
+                                className="w-6 h-6 rounded bg-slate-100 dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 font-bold text-[10px] hover:bg-slate-200"
+                                title="-1 000 FCFA"
+                              >
+                                -1k
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateClassReRegistrationFee(cls.id, reRegFee + 1000)}
+                                className="w-6 h-6 rounded bg-slate-100 dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 font-bold text-[10px] hover:bg-slate-200"
+                                title="+1 000 FCFA"
+                              >
+                                +1k
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
                         {/* Class Revenue projection */}
-                        <div className="flex items-center justify-between text-[11px] text-[#64748B] dark:text-[#94A3B8] px-1">
-                          <span>Prévisionnel annuel classe ({classCapacity} élèves) :</span>
+                        <div className="flex items-center justify-between text-[11px] text-[#64748B] dark:text-[#94A3B8] px-1 pt-1">
+                          <span>Prévisionnel écolage annuel classe ({classCapacity} élèves) :</span>
                           <span className="font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                             {formatFCFA(totalClassAnnualRevenue)}
                           </span>
@@ -885,12 +929,17 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
               )}
             </div>
 
-            {/* 4. FRAIS ANNEXES : INSCRIPTION & CANTINE */}
+            {/* 4. FRAIS GÉNÉRAUX & CANTINE */}
             <div className="p-6 bg-white dark:bg-[#151D2E] rounded-3xl border border-slate-200/80 dark:border-[#222F46] shadow-sm space-y-4">
-              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] border-b border-slate-200/80 dark:border-[#222F46] pb-3 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#0071E3]" />
-                <span>Frais d'Inscription, Réinscription & Cantine Scolaire</span>
-              </h3>
+              <div>
+                <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] border-b border-slate-200/80 dark:border-[#222F46] pb-3 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[#0071E3]" />
+                  <span>Frais Généraux de Base (Valeurs de Référence) & Cantine Scolaire</span>
+                </h3>
+                <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mt-1.5">
+                  Ces valeurs servent de montants par défaut généraux. Chaque classe possède ses propres frais d'inscription et de réinscription personnalisables dans la grille ci-dessus.
+                </p>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200/80 dark:border-[#222F46] space-y-2">
@@ -1115,7 +1164,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-3">
                     <div>
                       <label className="block text-[#64748B] dark:text-[#94A3B8] mb-1 font-medium text-[11px]">Nom de la classe :</label>
                       <input
@@ -1136,6 +1185,34 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                           value={newClassMonthlyTuition}
                           onChange={(e) => setNewClassMonthlyTuition(Number(e.target.value))}
                           className="w-full p-2 bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] rounded-xl text-xs font-mono font-bold text-[#0071E3] dark:text-[#38BDF8] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-[#64748B] font-bold">FCFA</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[#64748B] dark:text-[#94A3B8] mb-1 font-medium text-[11px]">Frais Inscription (Nouveau) :</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step={1000}
+                          value={newClassRegistrationFee}
+                          onChange={(e) => setNewClassRegistrationFee(Number(e.target.value))}
+                          className="w-full p-2 bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] rounded-xl text-xs font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-[#64748B] font-bold">FCFA</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[#64748B] dark:text-[#94A3B8] mb-1 font-medium text-[11px]">Réinscription (Ancien) :</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step={1000}
+                          value={newClassReRegistrationFee}
+                          onChange={(e) => setNewClassReRegistrationFee(Number(e.target.value))}
+                          className="w-full p-2 bg-white dark:bg-[#151D2E] border border-slate-200/80 dark:border-[#222F46] rounded-xl text-xs font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
                         />
                         <span className="absolute right-2.5 top-2 text-[10px] text-[#64748B] font-bold">FCFA</span>
                       </div>
@@ -1202,6 +1279,8 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                     const subsCount = (formData.classSubjects?.[cls.name] || []).length;
                     const monthly = cls.monthlyTuition || 0;
                     const annual = monthly * formData.schoolDurationMonths;
+                    const regFee = cls.registrationFee ?? 0;
+                    const reRegFee = cls.reRegistrationFee ?? 0;
 
                     return (
                       <div
@@ -1230,7 +1309,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                           </p>
                         </div>
 
-                        {/* Tuition on class card */}
+                        {/* Tuition & Registration on class card */}
                         <div className="pt-2 mt-2 border-t border-slate-200/60 dark:border-[#222F46] space-y-1">
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-[#64748B]">Mensualité :</span>
@@ -1239,7 +1318,13 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ config, onSaveConfig }) 
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[10px]">
-                            <span className="text-[#64748B]">Total ({formData.schoolDurationMonths}m) :</span>
+                            <span className="text-[#64748B]">Inscr. / Réinscr. :</span>
+                            <span className="font-mono font-medium text-[#0F172A] dark:text-[#F8FAFC]">
+                              {formatFCFA(regFee)} / {formatFCFA(reRegFee)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-[#64748B]">Total écolage ({formData.schoolDurationMonths}m) :</span>
                             <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                               {formatFCFA(annual)}
                             </span>
