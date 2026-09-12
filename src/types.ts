@@ -29,6 +29,22 @@ export interface PaymentRecord {
   note?: string;
 }
 
+export type CashTransactionType = 'encaissement' | 'decaissement';
+
+export interface CashTransaction {
+  id: string;
+  date: string;
+  type: CashTransactionType;
+  category: string;
+  reason: string; // Motif obligatoire
+  amount: number; // Montant obligatoire > 0
+  paymentMethod: PaymentMethod;
+  registeredBy: string;
+  thirdPartyName?: string;
+  receiptNumber?: string;
+  notes?: string;
+}
+
 export interface Student {
   id: string;
   matricule: string;

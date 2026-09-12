@@ -10,7 +10,8 @@ import {
   PenaltyRecord,
   School,
   UserRole,
-  ROLE_PERMISSIONS
+  ROLE_PERMISSIONS,
+  CashTransaction
 } from './types';
 import { initialConfig, initialStudents, initialStaff, initialUserStats } from './data/mockData';
 import { syncStudentsRanksAndCounts } from './utils/gradeCalculations';
@@ -210,6 +211,42 @@ export default function App() {
       return [];
     }
   });
+
+  const [cashTransactions, setCashTransactions] = useState<CashTransaction[]>(() => {
+    try {
+      const savedSchool = localStorage.getItem('adlon_current_school');
+      const schoolId = savedSchool ? JSON.parse(savedSchool)?.id : null;
+      const key = schoolId ? `adlon_cash_transactions_${schoolId}` : 'adlon_cash_transactions';
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const key = currentSchool ? `adlon_cash_transactions_${currentSchool.id}` : 'adlon_cash_transactions';
+      localStorage.setItem('adlon_cash_transactions', JSON.stringify(cashTransactions));
+      if (currentSchool) {
+        localStorage.setItem(key, JSON.stringify(cashTransactions));
+      }
+    } catch (e) {
+      console.error('Failed to save cash transactions', e);
+    }
+  }, [cashTransactions, currentSchool]);
+
+  const handleAddCashTransaction = (tx: CashTransaction) => {
+    setCashTransactions((prev) => [tx, ...prev]);
+  };
+
+  const handleDeleteCashTransaction = (id: string) => {
+    setCashTransactions((prev) => prev.filter((tx) => tx.id !== id));
+  };
 
   const [userStats, setUserStats] = useState<UserStats>(initialUserStats);
   const [activeTab, setActiveTab] = useState<NavigationTab>('dashboard');
@@ -854,6 +891,9 @@ export default function App() {
               config={config}
               students={students}
               staff={staff}
+              cashTransactions={cashTransactions}
+              onAddCashTransaction={handleAddCashTransaction}
+              onDeleteCashTransaction={handleDeleteCashTransaction}
               onOpenPayment={(student) => setPaymentModalStudent(student)}
               onOpenStudentDetail={(student) => setDetailModalStudent(student)}
               onOpenWhatsApp={(student) => setWhatsAppModalData({ student, defaultType: 'relance' })}

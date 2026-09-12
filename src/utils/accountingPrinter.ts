@@ -1,4 +1,4 @@
-import { Student, StaffMember, SchoolConfig } from '../types';
+import { Student, StaffMember, SchoolConfig, CashTransaction } from '../types';
 import { formatFCFA } from './formatters';
 import { calculateAllTeachersMonthlyVolume } from './timetableUtils';
 
@@ -8,19 +8,38 @@ export interface AccountingData {
   config: SchoolConfig;
   students: Student[];
   staff: StaffMember[];
+  cashTransactions?: CashTransaction[];
   periodYear?: string;
 }
 
 /**
  * Calculates fundamental accounting totals from real application data
  */
-export function getAccountingAggregates(students: Student[], staff: StaffMember[], config: SchoolConfig) {
+export function getAccountingAggregates(
+  students: Student[],
+  staff: StaffMember[],
+  config: SchoolConfig,
+  cashTransactions: CashTransaction[] = []
+) {
   // Total billed tuition fees
   const totalBilledTuition = students.reduce((sum, s) => sum + (s.totalDue || 0), 0);
   
   // Total tuition collected (Revenue Cash)
   const totalCollectedTuition = students.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
   
+  // Extra-curricular cash collected
+  const extraCollected = cashTransactions
+    .filter((t) => t.type === 'encaissement')
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+  // Total Cash Expenses / Disbursements
+  const totalDisbursements = cashTransactions
+    .filter((t) => t.type === 'decaissement')
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+  // Total Income (Scolarités + Extra)
+  const totalIncome = totalCollectedTuition + extraCollected;
+
   // Outstanding receivables (Student debts)
   const totalReceivables = students.reduce((sum, s) => sum + (s.balanceRemaining || 0), 0);
   
@@ -41,14 +60,14 @@ export function getAccountingAggregates(students: Student[], staff: StaffMember[
   // Estimated Annualized Payroll (10 academic months)
   const annualPayroll = totalMonthlyPayroll * (config.schoolDurationMonths || 10);
 
-  // Cash in Bank/Mobile Money & Till
-  const bankAndCashBalance = totalCollectedTuition > 0 ? totalCollectedTuition : (config.availableBankCash || 0);
+  // Net Cash in Hand / Bank Balance
+  const bankAndCashBalance = totalIncome - totalDisbursements;
 
-  // Operational expenses estimate (Supplies, electricity, administration ~12% of tuition collected)
-  const operatingExpenses = Math.round(totalCollectedTuition * 0.12);
+  // Operational expenses estimate plus explicit disbursements
+  const operatingExpenses = Math.round(totalCollectedTuition * 0.1) + totalDisbursements;
 
   // Net Profit / Deficit
-  const netResult = totalCollectedTuition - (annualPayroll + operatingExpenses);
+  const netResult = totalIncome - (annualPayroll + operatingExpenses);
 
   // All payment transactions flat list sorted chronologically
   const allTransactions: {
@@ -64,6 +83,7 @@ export function getAccountingAggregates(students: Student[], staff: StaffMember[
     cashierName?: string;
     accountCode: string;
     accountLabel: string;
+    type?: 'encaissement' | 'decaissement';
   }[] = [];
 
   students.forEach((s) => {
@@ -81,7 +101,26 @@ export function getAccountingAggregates(students: Student[], staff: StaffMember[
         cashierName: p.cashierName || 'Caisse Établissement',
         accountCode: '701000',
         accountLabel: 'Frais d\'Études et Scolarités',
+        type: 'encaissement',
       });
+    });
+  });
+
+  cashTransactions.forEach((t) => {
+    allTransactions.push({
+      id: t.id,
+      date: t.date,
+      refNumber: t.receiptNumber || `CASH-${t.date.replace(/-/g, '')}`,
+      description: `${t.type === 'encaissement' ? 'Encaissement Extra-scolaire' : 'Décaissement (Sortie)'} [${t.category}] : ${t.reason}`,
+      studentName: t.thirdPartyName || (t.type === 'encaissement' ? 'Tiers Client' : 'Bénéficiaire'),
+      matricule: 'CAISSE',
+      classLevel: t.category,
+      paymentMethod: t.paymentMethod,
+      amount: t.type === 'decaissement' ? -t.amount : t.amount,
+      cashierName: t.registeredBy || 'Caisse Établissement',
+      accountCode: t.type === 'encaissement' ? '708000' : '601000',
+      accountLabel: t.type === 'encaissement' ? 'Produits Extra-Scolaires' : 'Charges & Décaissements',
+      type: t.type,
     });
   });
 
@@ -90,6 +129,9 @@ export function getAccountingAggregates(students: Student[], staff: StaffMember[
   return {
     totalBilledTuition,
     totalCollectedTuition,
+    extraCollected,
+    totalDisbursements,
+    totalIncome,
     totalReceivables,
     totalMonthlyPayroll,
     annualPayroll,
@@ -105,7 +147,7 @@ export function getAccountingAggregates(students: Student[], staff: StaffMember[
  */
 export function generateBilanHtml(data: AccountingData, autoPrint: boolean = false): string {
   const { config, students, staff } = data;
-  const agg = getAccountingAggregates(students, staff, config);
+  const agg = getAccountingAggregates(students, staff, config, data.cashTransactions || []);
 
   const schoolName = config.schoolName || 'Établissement Scolaire';
   const academicYear = config.academicYear || '2026-2027';
@@ -246,7 +288,7 @@ export function generateBilanHtml(data: AccountingData, autoPrint: boolean = fal
  */
 export function generateCompteResultatHtml(data: AccountingData, autoPrint: boolean = false): string {
   const { config, students, staff } = data;
-  const agg = getAccountingAggregates(students, staff, config);
+  const agg = getAccountingAggregates(students, staff, config, data.cashTransactions || []);
 
   const schoolName = config.schoolName || 'Établissement Scolaire';
   const academicYear = config.academicYear || '2026-2027';
@@ -377,7 +419,7 @@ export function generateCompteResultatHtml(data: AccountingData, autoPrint: bool
  */
 export function generateLivreJournalHtml(data: AccountingData, autoPrint: boolean = false): string {
   const { config, students, staff } = data;
-  const agg = getAccountingAggregates(students, staff, config);
+  const agg = getAccountingAggregates(students, staff, config, data.cashTransactions || []);
 
   const schoolName = config.schoolName || 'Établissement Scolaire';
   const academicYear = config.academicYear || '2026-2027';
@@ -472,7 +514,7 @@ export function generateLivreJournalHtml(data: AccountingData, autoPrint: boolea
  */
 export function generateBalanceComptesHtml(data: AccountingData, autoPrint: boolean = false): string {
   const { config, students, staff } = data;
-  const agg = getAccountingAggregates(students, staff, config);
+  const agg = getAccountingAggregates(students, staff, config, data.cashTransactions || []);
 
   const schoolName = config.schoolName || 'Établissement Scolaire';
   const academicYear = config.academicYear || '2026-2027';
