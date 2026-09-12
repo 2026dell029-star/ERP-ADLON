@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { SchoolConfig, Student } from '../types';
-import { formatFCFA, cleanPhoneNumber, getClassesForCycle } from '../utils/formatters';
+import { formatFCFA, cleanPhoneNumber, formatDisplayPhoneNumber, getClassesForCycle } from '../utils/formatters';
 import { 
   MessageCircle, 
   Search, 
@@ -202,7 +202,7 @@ export const CrmWhatsAppView: React.FC<CrmWhatsAppViewProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#64748B] dark:text-[#94A3B8]">Téléphone (+242) :</span>
-                    <span className="font-mono text-[#0071E3] dark:text-[#38BDF8] font-semibold">+{normalizedPhone}</span>
+                    <span className="font-mono text-[#0071E3] dark:text-[#38BDF8] font-semibold">{formatDisplayPhoneNumber(s.parentPhone, config.countryCode)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#64748B] dark:text-[#94A3B8]">Moyenne :</span>

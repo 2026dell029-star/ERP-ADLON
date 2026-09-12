@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { SchoolConfig, Student, StudentCycle, StudentStatus } from '../types';
-import { formatFCFA, cleanPhoneNumber, getClassMonthlyTuition, getClassRegistrationFee, getClassesForCycle } from '../utils/formatters';
+import { formatFCFA, cleanPhoneNumber, formatDisplayPhoneNumber, getClassMonthlyTuition, getClassRegistrationFee, getClassesForCycle } from '../utils/formatters';
 import { 
   UserPlus, 
   Search, 
@@ -275,7 +275,7 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
       s.balanceRemaining,
       s.status,
       s.parentName,
-      `+242 ${s.parentPhone}`
+      formatDisplayPhoneNumber(s.parentPhone, config.countryCode)
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -682,7 +682,7 @@ export const EnrollmentView: React.FC<EnrollmentViewProps> = ({
                           className="inline-flex items-center gap-1 font-mono text-[11px] text-[#0071E3] dark:text-[#38BDF8] hover:underline"
                         >
                           <Phone className="w-3 h-3" />
-                          +242 {student.parentPhone}
+                          {formatDisplayPhoneNumber(student.parentPhone, config.countryCode)}
                         </button>
                       </td>
 

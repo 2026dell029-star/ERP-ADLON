@@ -853,6 +853,7 @@ export default function App() {
             <FinanceView
               config={config}
               students={students}
+              staff={staff}
               onOpenPayment={(student) => setPaymentModalStudent(student)}
               onOpenStudentDetail={(student) => setDetailModalStudent(student)}
               onOpenWhatsApp={(student) => setWhatsAppModalData({ student, defaultType: 'relance' })}

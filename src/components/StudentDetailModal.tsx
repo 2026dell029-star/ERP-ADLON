@@ -1,6 +1,6 @@
 import React from 'react';
 import { Student } from '../types';
-import { formatFCFA, cleanPhoneNumber } from '../utils/formatters';
+import { formatFCFA, cleanPhoneNumber, formatDisplayPhoneNumber } from '../utils/formatters';
 import { 
   X, 
   MessageCircle, 
@@ -206,7 +206,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
               </div>
               <div>
                 <span className="text-[#64748B] dark:text-[#94A3B8] block text-[11px]">Téléphone direct :</span>
-                <strong className="font-mono text-[#0071E3] dark:text-[#38BDF8] font-bold">+{normalizedPhone}</strong>
+                <strong className="font-mono text-[#0071E3] dark:text-[#38BDF8] font-bold">{formatDisplayPhoneNumber(student.parentPhone, countryCode)}</strong>
               </div>
             </div>
           </div>

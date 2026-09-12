@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Student, SchoolConfig } from '../types';
-import { formatFCFA, buildWhatsAppLink, cleanPhoneNumber } from '../utils/formatters';
+import { formatFCFA, buildWhatsAppLink, cleanPhoneNumber, formatDisplayPhoneNumber } from '../utils/formatters';
 import { MessageCircle, X, Send, Copy, Check } from 'lucide-react';
 
 interface WhatsAppPreviewModalProps {
@@ -73,7 +73,7 @@ export const WhatsAppPreviewModal: React.FC<WhatsAppPreviewModalProps> = ({
               CRM WhatsApp
             </h3>
             <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-              Destinataire : <strong className="text-[#0F172A] dark:text-[#F8FAFC]">{student.parentName}</strong> ({student.parentPhone})
+              Destinataire : <strong className="text-[#0F172A] dark:text-[#F8FAFC]">{student.parentName}</strong> ({formatDisplayPhoneNumber(student.parentPhone, countryCode)})
             </p>
           </div>
           <button 

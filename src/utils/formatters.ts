@@ -79,20 +79,47 @@ export function getClassRegistrationFee(
 }
 
 export function cleanPhoneNumber(phone: string, countryCode: string = '+242'): string {
-  // Remove spaces, dots, dashes
-  let cleaned = phone.replace(/[\s.-]/g, '');
-  // If it starts with country code with or without +, strip it for normalization
-  const codeWithoutPlus = countryCode.replace('+', '');
+  if (!phone) return '';
+
+  // Remove spaces, dots, dashes, parentheses
+  let cleaned = phone.trim().replace(/[\s.()\-]/g, '');
+  const codeWithoutPlus = countryCode.replace('+', '').trim() || '242';
+
+  // Strip leading + or country code if already present
   if (cleaned.startsWith('+' + codeWithoutPlus)) {
     cleaned = cleaned.substring(codeWithoutPlus.length + 1);
   } else if (cleaned.startsWith(codeWithoutPlus)) {
     cleaned = cleaned.substring(codeWithoutPlus.length);
-  }
-  // Strip leading zero if present (e.g. 066543210 -> 66543210 or 05... -> 5...)
-  if (cleaned.startsWith('0')) {
+  } else if (cleaned.startsWith('+')) {
     cleaned = cleaned.substring(1);
   }
+
+  // Handle Congo (+242) specific logic
+  if (codeWithoutPlus === '242') {
+    // Congo national phone numbers have 9 digits and start with '0' (e.g. 055438655, 067696157).
+    // If the user typed an 8-digit number without '0' (e.g. 55438655), prepend '0'.
+    if (cleaned.length === 8 && !cleaned.startsWith('0')) {
+      cleaned = '0' + cleaned;
+    }
+    // Do NOT strip the leading '0'! Keep it so cleaned has 9 digits starting with '0'.
+  } else {
+    // For other countries where leading zero is a trunk code that must be stripped:
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+  }
+
   return codeWithoutPlus + cleaned;
+}
+
+export function formatDisplayPhoneNumber(phone: string, countryCode: string = '+242'): string {
+  if (!phone) return '';
+  const fullDigits = cleanPhoneNumber(phone, countryCode);
+  if (fullDigits.startsWith('242') && fullDigits.length === 12) {
+    const local = fullDigits.substring(3); // e.g. '055438655'
+    return `+242 ${local.substring(0, 2)} ${local.substring(2, 5)} ${local.substring(5, 7)} ${local.substring(7)}`;
+  }
+  return '+' + fullDigits;
 }
 
 export function buildWhatsAppLink(phone: string, countryCode: string, message: string): string {

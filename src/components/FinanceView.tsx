@@ -1,6 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { SchoolConfig, Student } from '../types';
+import { SchoolConfig, Student, StaffMember } from '../types';
 import { formatFCFA, getClassesForCycle } from '../utils/formatters';
+import { 
+  printAccountingDocument,
+  openAccountingDocumentInNewTab,
+  downloadAccountingCSV,
+  AccountingDocumentType,
+  generateBilanHtml,
+  generateCompteResultatHtml,
+  generateLivreJournalHtml,
+  generateBalanceComptesHtml
+} from '../utils/accountingPrinter';
 import { 
   Search, 
   Receipt,
@@ -8,12 +18,23 @@ import {
   CreditCard,
   Wallet,
   ArrowUpRight,
-  ShieldCheck
+  ShieldCheck,
+  FileSpreadsheet,
+  Printer,
+  FileText,
+  TrendingUp,
+  BookOpen,
+  Scale,
+  Download,
+  Eye,
+  X,
+  Sparkles
 } from 'lucide-react';
 
 interface FinanceViewProps {
   config: SchoolConfig;
   students: Student[];
+  staff?: StaffMember[];
   onOpenPayment: (student: Student) => void;
   onOpenStudentDetail: (student: Student) => void;
   onOpenWhatsApp: (student: Student) => void;
@@ -23,6 +44,7 @@ interface FinanceViewProps {
 export const FinanceView: React.FC<FinanceViewProps> = ({
   config,
   students,
+  staff = [],
   onOpenPayment,
   onOpenStudentDetail,
   onOpenWhatsApp,
@@ -32,7 +54,17 @@ export const FinanceView: React.FC<FinanceViewProps> = ({
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
+  // Preview Modal State for Accounting Docs
+  const [activePreviewDoc, setActivePreviewDoc] = useState<AccountingDocumentType | null>(null);
+
   const availableClassesForCycle = getClassesForCycle(selectedCycle, config);
+
+  // Accounting Data Package
+  const accountingData = useMemo(() => ({
+    config,
+    students,
+    staff,
+  }), [config, students, staff]);
 
   // Real financial aggregates computed strictly from user-entered students
   const totalBilled = useMemo(() => {
@@ -99,8 +131,215 @@ export const FinanceView: React.FC<FinanceViewProps> = ({
     });
   }, [students, searchTerm, selectedCycle, selectedClass, selectedStatus]);
 
+  // Preview HTML for Modal
+  const modalPreviewHtml = useMemo(() => {
+    if (!activePreviewDoc) return '';
+    if (activePreviewDoc === 'bilan') return generateBilanHtml(accountingData, false);
+    if (activePreviewDoc === 'resultat') return generateCompteResultatHtml(accountingData, false);
+    if (activePreviewDoc === 'journal') return generateLivreJournalHtml(accountingData, false);
+    if (activePreviewDoc === 'balance') return generateBalanceComptesHtml(accountingData, false);
+    return '';
+  }, [activePreviewDoc, accountingData]);
+
   return (
     <div className="space-y-6">
+      {/* STRATEGIC ACCOUNTING ACTION BUTTONS PANEL */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-700/60 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 relative z-10">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold mb-2 border border-blue-400/30">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Génération Stratégique & Conformité SYSCOHADA</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+              Documents Comptables & Bilans Financiers (1-Clic)
+            </h2>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+              Téléchargez et imprimez instantanément vos états financiers officiels prêts pour audits, conseils d'administration et déclarations administratives.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => printAccountingDocument('bilan', accountingData)}
+              className="px-4 py-2.5 rounded-2xl bg-[#0071E3] hover:bg-blue-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg hover:shadow-blue-500/20 transition-all cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Imprimer Tout en PDF</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 4 STRATEGIC BUTTON CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 relative z-10">
+          {/* 1. BILAN COMPTABLE */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:border-blue-400/40 transition-all flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-blue-300">Actif / Passif</span>
+                <div className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center">
+                  <FileText className="w-4 h-4" />
+                </div>
+              </div>
+              <h3 className="font-bold text-sm text-white">Bilan Comptable</h3>
+              <p className="text-[11px] text-slate-300 mt-1">
+                Patrimoine, créances élèves, immobilisations et capitaux propres.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 pt-2 border-t border-white/10">
+              <button
+                onClick={() => printAccountingDocument('bilan', accountingData)}
+                className="flex-1 py-1.5 px-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                title="Générer & Imprimer PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>PDF (1-Clic)</span>
+              </button>
+              <button
+                onClick={() => setActivePreviewDoc('bilan')}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[11px] transition-colors cursor-pointer"
+                title="Aperçu Rapide"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => downloadAccountingCSV('bilan', accountingData)}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-emerald-300 rounded-xl text-[11px] transition-colors cursor-pointer"
+                title="Télécharger Excel / CSV"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* 2. COMPTE DE RÉSULTAT */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:border-emerald-400/40 transition-all flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-emerald-300">P&L (Produits & Charges)</span>
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+              <h3 className="font-bold text-sm text-white">Compte de Résultat</h3>
+              <p className="text-[11px] text-slate-300 mt-1">
+                Excédent net, scolarités perçues vs masse salariale et charges.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 pt-2 border-t border-white/10">
+              <button
+                onClick={() => printAccountingDocument('resultat', accountingData)}
+                className="flex-1 py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                title="Générer & Imprimer PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>PDF (1-Clic)</span>
+              </button>
+              <button
+                onClick={() => setActivePreviewDoc('resultat')}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[11px] transition-colors cursor-pointer"
+                title="Aperçu Rapide"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => downloadAccountingCSV('resultat', accountingData)}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-emerald-300 rounded-xl text-[11px] transition-colors cursor-pointer"
+                title="Télécharger Excel / CSV"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* 3. LIVRE JOURNAL DES ENCAISSEMENTS */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:border-amber-400/40 transition-all flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-amber-300">Journal Chronologique</span>
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+              </div>
+              <h3 className="font-bold text-sm text-white">Livre Journal</h3>
+              <p className="text-[11px] text-slate-300 mt-1">
+                Registre chronologique des reçus, paiements et règlements.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 pt-2 border-t border-white/10">
+              <button
+                onClick={() => printAccountingDocument('journal', accountingData)}
+                className="flex-1 py-1.5 px-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                title="Générer & Imprimer PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>PDF (1-Clic)</span>
+              </button>
+              <button
+                onClick={() => setActivePreviewDoc('journal')}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[11px] transition-colors cursor-pointer"
+                title="Aperçu Rapide"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => downloadAccountingCSV('journal', accountingData)}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-emerald-300 rounded-xl text-[11px] transition-colors cursor-pointer"
+                title="Télécharger Excel / CSV"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* 4. BALANCE DES COMPTES */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:border-purple-400/40 transition-all flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-purple-300">SYSCOHADA Classe 4-7</span>
+                <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center">
+                  <Scale className="w-4 h-4" />
+                </div>
+              </div>
+              <h3 className="font-bold text-sm text-white">Balance Général</h3>
+              <p className="text-[11px] text-slate-300 mt-1">
+                Balance générale équilibrée des comptes (Caisse, Banque, Scolarités).
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 pt-2 border-t border-white/10">
+              <button
+                onClick={() => printAccountingDocument('balance', accountingData)}
+                className="flex-1 py-1.5 px-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                title="Générer & Imprimer PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>PDF (1-Clic)</span>
+              </button>
+              <button
+                onClick={() => setActivePreviewDoc('balance')}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[11px] transition-colors cursor-pointer"
+                title="Aperçu Rapide"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => downloadAccountingCSV('balance', accountingData)}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-emerald-300 rounded-xl text-[11px] transition-colors cursor-pointer"
+                title="Télécharger Excel / CSV"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 1. FINANCIAL KPI SUMMARY CARDS (Strictly Real Data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Billed */}
@@ -371,6 +610,123 @@ export const FinanceView: React.FC<FinanceViewProps> = ({
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK PREVIEW MODAL FOR ACCOUNTING DOCUMENTS */}
+      {activePreviewDoc && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white dark:bg-[#151D2E] rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 dark:border-[#222F46]">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-[#222F46] flex items-center justify-between bg-[#F8FAFC] dark:bg-[#0B0F19]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-blue-50 dark:bg-blue-900/40 text-[#0071E3] flex items-center justify-center">
+                  <Printer className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                    Aperçu du Document Comptable
+                  </h3>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                    Conforme aux normes SYSCOHADA Établissements Scolaires
+                  </p>
+                </div>
+              </div>
+
+              {/* Document Type Selector Tabs */}
+              <div className="hidden sm:flex items-center gap-1 bg-slate-200/70 dark:bg-[#1E293B] p-1 rounded-2xl text-xs">
+                <button
+                  onClick={() => setActivePreviewDoc('bilan')}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                    activePreviewDoc === 'bilan'
+                      ? 'bg-white dark:bg-[#0071E3] text-[#0071E3] dark:text-white shadow-xs'
+                      : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A]'
+                  }`}
+                >
+                  Bilan
+                </button>
+                <button
+                  onClick={() => setActivePreviewDoc('resultat')}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                    activePreviewDoc === 'resultat'
+                      ? 'bg-white dark:bg-[#0071E3] text-[#0071E3] dark:text-white shadow-xs'
+                      : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A]'
+                  }`}
+                >
+                  P&L
+                </button>
+                <button
+                  onClick={() => setActivePreviewDoc('journal')}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                    activePreviewDoc === 'journal'
+                      ? 'bg-white dark:bg-[#0071E3] text-[#0071E3] dark:text-white shadow-xs'
+                      : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A]'
+                  }`}
+                >
+                  Livre Journal
+                </button>
+                <button
+                  onClick={() => setActivePreviewDoc('balance')}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                    activePreviewDoc === 'balance'
+                      ? 'bg-white dark:bg-[#0071E3] text-[#0071E3] dark:text-white shadow-xs'
+                      : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A]'
+                  }`}
+                >
+                  Balance
+                </button>
+              </div>
+
+              <button
+                onClick={() => setActivePreviewDoc(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Document Iframe Render */}
+            <div className="flex-1 p-4 bg-slate-100 dark:bg-[#0B0F19] overflow-auto">
+              <iframe
+                srcDoc={modalPreviewHtml}
+                title="Aperçu Document Comptable"
+                className="w-full min-h-[520px] bg-white rounded-2xl shadow-md border-0"
+              />
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-[#222F46] bg-white dark:bg-[#151D2E] flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
+                <span>Format A4 Prêt à l'Impression / Sauvegarde PDF</span>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  onClick={() => downloadAccountingCSV(activePreviewDoc, accountingData)}
+                  className="px-4 py-2 rounded-2xl border border-slate-300 dark:border-[#222F46] text-[#0F172A] dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-[#1E293B] font-semibold text-xs flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span>Exporter CSV / Excel</span>
+                </button>
+
+                <button
+                  onClick={() => openAccountingDocumentInNewTab(activePreviewDoc, accountingData)}
+                  className="px-4 py-2 rounded-2xl border border-blue-200 dark:border-blue-900 text-[#0071E3] dark:text-[#38BDF8] hover:bg-blue-50 dark:hover:bg-blue-900/30 font-semibold text-xs flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Ouvrir Nouvel Onglet</span>
+                </button>
+
+                <button
+                  onClick={() => printAccountingDocument(activePreviewDoc, accountingData)}
+                  className="px-5 py-2 rounded-2xl bg-[#0071E3] hover:bg-blue-600 text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Imprimer en PDF (1-Clic)</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
